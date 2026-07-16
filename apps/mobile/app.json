@@ -1,0 +1,59 @@
+{
+  "expo": {
+    "name": "Arbu Games",
+    "slug": "arbu-games",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "arbu-games",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.arbulab.arbugames",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Arbu Games necesita la cámara para tomar fotos en vivo de los árboles.",
+        "NSLocationWhenInUseUsageDescription": "Arbu Games necesita tu ubicación para registrar la posición exacta del árbol.",
+        "NSLocationAlwaysUsageDescription": "Arbu Games usa tu ubicación para encontrar árboles cercanos."
+      }
+    },
+    "android": {
+      "package": "com.arbulab.arbugames",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#14532d"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#14532d"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Arbu Games necesita la cámara para tomar fotos en vivo de los árboles."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Arbu Games necesita tu ubicación para registrar la posición exacta del árbol."
+        }
+      ]
+    ]
+  }
+}
