@@ -121,19 +121,22 @@ export default function ProfileScreen() {
             {badges.map((badge) => (
               <Card
                 key={badge.id}
-                className={`w-[48%] p-4 items-center rounded-2xl ${badge.unlocked ? '' : 'opacity-45'}`}
+                variant={badge.unlocked ? 'default' : 'dim'}
+                className="w-[48%] p-4 items-center rounded-2xl"
               >
-                <IconWell size={46} className="mb-2.5">
+                <IconWell size={46} className="mb-2.5" dim={!badge.unlocked}>
                   {badge.unlocked ? (
                     <badge.Icon size={21} color={T.bright} />
                   ) : (
                     <LockIcon size={18} color={T.faint} />
                   )}
                 </IconWell>
-                <Text className={`font-bold text-center text-xs ${badge.unlocked ? 'text-body' : 'text-muted'}`}>
+                <Text className={`font-bold text-center text-xs ${badge.unlocked ? 'text-body' : 'text-faint'}`}>
                   {badge.name}
                 </Text>
-                <Text className="text-faint text-[10px] text-center mt-1 leading-4">
+                <Text
+                  className={`text-[10px] text-center mt-1 leading-4 ${badge.unlocked ? 'text-muted' : 'text-faint'}`}
+                >
                   {badge.desc}
                 </Text>
               </Card>

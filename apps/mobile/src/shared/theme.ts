@@ -9,8 +9,9 @@ export const T = {
   brightDeep: '#19c455',
   leaf: '#7fd6a0',
 
-  surface: 'rgba(255,255,255,0.045)',
-  surfaceHi: 'rgba(255,255,255,0.08)',
+  surfaceDim: 'rgba(255,255,255,0.018)',
+  surface: 'rgba(255,255,255,0.05)',
+  surfaceHi: 'rgba(255,255,255,0.09)',
   well: 'rgba(48,224,106,0.12)',
   hairline: 'rgba(120,230,150,0.14)',
   hairline2: 'rgba(255,255,255,0.07)',

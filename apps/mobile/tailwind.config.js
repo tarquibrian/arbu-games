@@ -14,9 +14,11 @@ module.exports = {
         bright: '#2fe06a', // primary accent — CTAs & key icons only
         'bright-deep': '#19c455', // gradient partner of bright
         leaf: '#7fd6a0', // quiet green — secondary labels, prices
-        // Surfaces — translucent so the background glow shows through
-        surface: 'rgba(255,255,255,0.045)', // base card
-        'surface-hi': 'rgba(255,255,255,0.08)', // pressed / elevated / modal rows
+        // Surfaces — translucent so the background glow shows through.
+        // Three tiers: dim (disabled/completed) < surface (live card) < hi (elevated).
+        'surface-dim': 'rgba(255,255,255,0.018)', // inactive / disabled / completed
+        surface: 'rgba(255,255,255,0.05)', // base card
+        'surface-hi': 'rgba(255,255,255,0.09)', // pressed / elevated / modal rows
         well: 'rgba(48,224,106,0.12)', // icon wells, accent-tinted chips
         // Hairlines
         hairline: 'rgba(120,230,150,0.14)', // soft green-tinted border

@@ -14,21 +14,26 @@ import {
 import { LinearGradient } from 'expo-linear-gradient'
 import { T, CTA_GRADIENT, glow, lift } from '@/shared/theme'
 
-// — Card: base translucent surface with a soft hairline —
+// — Card: base translucent surface with a soft hairline.
+//   variant="dim" is the disabled/completed state: darker fill, no hairline,
+//   so live cards visibly pop against it (contrast by fill, not opacity). —
 export function Card({
   children,
   className = '',
   style,
+  variant = 'default',
 }: {
   children: ReactNode
   className?: string
   style?: StyleProp<ViewStyle>
+  variant?: 'default' | 'dim'
 }) {
+  const surface =
+    variant === 'dim'
+      ? 'bg-surface-dim border border-transparent'
+      : 'bg-surface border border-hairline-2'
   return (
-    <View
-      className={`bg-surface border border-hairline-2 rounded-3xl ${className}`}
-      style={style}
-    >
+    <View className={`${surface} rounded-3xl ${className}`} style={style}>
       {children}
     </View>
   )
@@ -80,17 +85,41 @@ export function PrimaryButton({
   const height = size === 'sm' ? 34 : 48
   const radius = size === 'sm' ? 11 : 15
   const fontSize = size === 'sm' ? 12 : 14.5
+
+  // Disabled = flat dark surface + muted text. A washed-out gradient reads as
+  // "broken active"; a dark flat pill reads unmistakably as "can't do this".
+  if (disabled && !loading) {
+    return (
+      <View
+        style={{
+          height,
+          borderRadius: radius,
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingHorizontal: size === 'sm' ? 12 : 18,
+          backgroundColor: T.surfaceDim,
+          borderWidth: 1,
+          borderColor: T.hairline2,
+        }}
+      >
+        <Text style={{ color: T.faint, fontSize, fontWeight: '700', letterSpacing: 0.2 }}>
+          {title}
+        </Text>
+      </View>
+    )
+  }
+
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
       style={({ pressed }) => [
         { borderRadius: radius, opacity: pressed ? 0.88 : 1 },
-        !disabled && glow(0.35, 10),
+        glow(0.35, 10),
       ]}
     >
       <LinearGradient
-        colors={disabled ? ['rgba(48,224,106,0.28)', 'rgba(25,196,85,0.28)'] : [...CTA_GRADIENT]}
+        colors={[...CTA_GRADIENT]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={{
@@ -104,14 +133,7 @@ export function PrimaryButton({
         {loading ? (
           <ActivityIndicator size="small" color={T.ink} />
         ) : (
-          <Text
-            style={{
-              color: disabled ? 'rgba(4,35,15,0.75)' : T.ink,
-              fontSize,
-              fontWeight: '800',
-              letterSpacing: 0.2,
-            }}
-          >
+          <Text style={{ color: T.ink, fontSize, fontWeight: '800', letterSpacing: 0.2 }}>
             {title}
           </Text>
         )}
@@ -177,19 +199,22 @@ export function SectionTitle({
   )
 }
 
-// — IconWell: soft accent-tinted circle-square behind an icon —
+// — IconWell: soft accent-tinted circle-square behind an icon.
+//   dim=true drops the green tint for inactive/disabled contexts. —
 export function IconWell({
   children,
   size = 46,
   className = '',
+  dim = false,
 }: {
   children: ReactNode
   size?: number
   className?: string
+  dim?: boolean
 }) {
   return (
     <View
-      className={`bg-well items-center justify-center ${className}`}
+      className={`${dim ? 'bg-surface-hi' : 'bg-well'} items-center justify-center ${className}`}
       style={{ width: size, height: size, borderRadius: size * 0.36 }}
     >
       {children}

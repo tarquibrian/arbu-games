@@ -159,36 +159,39 @@ export default function HomeScreen() {
           {dailyMissions.map((mission) => (
             <Card
               key={mission.id}
-              className={`flex-row items-center justify-between p-4 rounded-2xl mb-3 ${
-                mission.completed ? 'opacity-55' : ''
-              }`}
+              variant={mission.completed ? 'dim' : 'default'}
+              className="flex-row items-center justify-between p-4 rounded-2xl mb-3"
             >
               <View className="flex-row items-center flex-1 pr-3">
-                <IconWell size={40} className="mr-3">
+                <IconWell size={40} className="mr-3" dim={mission.completed}>
                   {mission.completed ? (
-                    <CheckIcon size={18} color={T.leaf} />
+                    <CheckIcon size={18} color={T.faint} />
                   ) : (
                     <mission.Icon size={20} color={T.bright} />
                   )}
                 </IconWell>
                 <View className="flex-1">
-                  <Text
-                    className={`font-bold text-sm ${
-                      mission.completed ? 'text-muted line-through' : 'text-body'
-                    }`}
-                  >
+                  <Text className={`font-bold text-sm ${mission.completed ? 'text-faint' : 'text-body'}`}>
                     {mission.title}
                   </Text>
-                  <Text className="text-muted text-xs mt-0.5" numberOfLines={1}>
+                  <Text
+                    className={`text-xs mt-0.5 ${mission.completed ? 'text-faint' : 'text-muted'}`}
+                    numberOfLines={1}
+                  >
                     {mission.desc}
                   </Text>
                 </View>
               </View>
-              <View className={`px-2.5 py-1 rounded-full ${mission.completed ? 'bg-surface' : 'bg-well'}`}>
-                <Text className={`text-xs font-bold ${mission.completed ? 'text-faint' : 'text-leaf'}`}>
-                  {mission.completed ? 'Completado' : `+${mission.reward}`}
-                </Text>
-              </View>
+              {mission.completed ? (
+                <View className="flex-row items-center px-2.5 py-1 rounded-full bg-surface-hi">
+                  <CheckIcon size={11} color={T.leaf} />
+                  <Text className="text-muted text-xs font-bold ml-1">Completado</Text>
+                </View>
+              ) : (
+                <View className="px-2.5 py-1 rounded-full bg-well">
+                  <Text className="text-leaf text-xs font-bold">+{mission.reward}</Text>
+                </View>
+              )}
             </Card>
           ))}
         </View>

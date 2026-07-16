@@ -182,19 +182,29 @@ export default function RewardsScreen() {
             const soldOut = coupon.quota_remaining != null && coupon.quota_remaining <= 0
             const busy = redeemM.isPending && redeemM.variables?.id === coupon.id
             return (
-              <Card key={coupon.id} className="p-4 mb-3.5 rounded-2xl">
+              <Card
+                key={coupon.id}
+                variant={soldOut ? 'dim' : 'default'}
+                className="p-4 mb-3.5 rounded-2xl"
+              >
                 <View className="flex-row items-center justify-between mb-2">
                   <View className="flex-row items-center flex-1 pr-3">
-                    <IconWell size={46} className="mr-3">
-                      <Icon size={21} color={T.bright} />
+                    <IconWell size={46} className="mr-3" dim={soldOut}>
+                      <Icon size={21} color={soldOut ? T.faint : T.bright} />
                     </IconWell>
                     <View className="flex-1">
-                      <Text className="text-body font-bold text-[15px] leading-5">{coupon.title}</Text>
-                      <Text className="text-muted text-xs mt-0.5">{coupon.merchant?.name ?? ''}</Text>
+                      <Text className={`font-bold text-[15px] leading-5 ${soldOut ? 'text-faint' : 'text-body'}`}>
+                        {coupon.title}
+                      </Text>
+                      <Text className={`text-xs mt-0.5 ${soldOut ? 'text-faint' : 'text-muted'}`}>
+                        {coupon.merchant?.name ?? ''}
+                      </Text>
                     </View>
                   </View>
-                  <View className="bg-well px-3 py-1.5 rounded-full">
-                    <Text className="text-leaf font-extrabold text-sm">{coupon.price_coins} AC</Text>
+                  <View className={`px-3 py-1.5 rounded-full ${soldOut ? 'bg-surface-hi' : 'bg-well'}`}>
+                    <Text className={`font-extrabold text-sm ${soldOut ? 'text-faint' : 'text-leaf'}`}>
+                      {coupon.price_coins} AC
+                    </Text>
                   </View>
                 </View>
 
