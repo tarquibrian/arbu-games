@@ -1,29 +1,39 @@
 import { useState } from 'react'
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native'
+import { View, Text, ScrollView, Pressable } from 'react-native'
+import { LinearGradient } from 'expo-linear-gradient'
 import { ScreenBackground } from '@/shared/components/ui/ScreenBackground'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { UserIcon } from '@/shared/components/ui/Icons'
+import { T } from '@/shared/theme'
+import { Card } from '@/shared/components/ui/Kit'
+import { CrownIcon } from '@/shared/components/ui/Icons'
 
 // Mock Leaderboard Data
 const LEADERBOARD_WEEKLY = [
-  { rank: 1, name: 'sofiaplantas', trees: 28, points: 1420, active: false, initials: 'SP', color: '#ffb020' },
-  { rank: 2, name: 'alejandro_verde', trees: 24, points: 1280, active: false, initials: 'AV', color: '#9ca3af' },
-  { rank: 3, name: 'tarquibrian', trees: 18, points: 1140, active: true, initials: 'TB', color: '#2fe06a' }, // Current User
-  { rank: 4, name: 'carla.eco', trees: 15, points: 950, active: false, initials: 'CE', color: '#16a34a' },
-  { rank: 5, name: 'lucas_arbol', trees: 12, points: 820, active: false, initials: 'LA', color: '#15803d' },
-  { rank: 6, name: 'mariana_valle', trees: 10, points: 740, active: false, initials: 'MV', color: '#14532d' },
-  { rank: 7, name: 'cochala_green', trees: 8, points: 610, active: false, initials: 'CG', color: '#0d2419' },
+  { rank: 1, name: 'sofiaplantas', trees: 28, points: 1420, active: false, initials: 'SP' },
+  { rank: 2, name: 'alejandro_verde', trees: 24, points: 1280, active: false, initials: 'AV' },
+  { rank: 3, name: 'tarquibrian', trees: 18, points: 1140, active: true, initials: 'TB' }, // Current User
+  { rank: 4, name: 'carla.eco', trees: 15, points: 950, active: false, initials: 'CE' },
+  { rank: 5, name: 'lucas_arbol', trees: 12, points: 820, active: false, initials: 'LA' },
+  { rank: 6, name: 'mariana_valle', trees: 10, points: 740, active: false, initials: 'MV' },
+  { rank: 7, name: 'cochala_green', trees: 8, points: 610, active: false, initials: 'CG' },
 ]
 
 const LEADERBOARD_ALL_TIME = [
-  { rank: 1, name: 'sofiaplantas', trees: 245, points: 12450, active: false, initials: 'SP', color: '#ffb020' },
-  { rank: 2, name: 'cochala_green', trees: 198, points: 9890, active: false, initials: 'CG', color: '#ffb020' },
-  { rank: 3, name: 'alejandro_verde', trees: 184, points: 9280, active: false, initials: 'AV', color: '#9ca3af' },
-  { rank: 4, name: 'tarquibrian', trees: 142, points: 7140, active: true, initials: 'TB', color: '#2fe06a' }, // Current User
-  { rank: 5, name: 'carla.eco', trees: 95, points: 4750, active: false, initials: 'CE', color: '#16a34a' },
-  { rank: 6, name: 'lucas_arbol', trees: 72, points: 3620, active: false, initials: 'LA', color: '#15803d' },
-  { rank: 7, name: 'mariana_valle', trees: 50, points: 2500, active: false, initials: 'MV', color: '#14532d' },
+  { rank: 1, name: 'sofiaplantas', trees: 245, points: 12450, active: false, initials: 'SP' },
+  { rank: 2, name: 'cochala_green', trees: 198, points: 9890, active: false, initials: 'CG' },
+  { rank: 3, name: 'alejandro_verde', trees: 184, points: 9280, active: false, initials: 'AV' },
+  { rank: 4, name: 'tarquibrian', trees: 142, points: 7140, active: true, initials: 'TB' }, // Current User
+  { rank: 5, name: 'carla.eco', trees: 95, points: 4750, active: false, initials: 'CE' },
+  { rank: 6, name: 'lucas_arbol', trees: 72, points: 3620, active: false, initials: 'LA' },
+  { rank: 7, name: 'mariana_valle', trees: 50, points: 2500, active: false, initials: 'MV' },
 ]
+
+// Podium accents — metal tint per position, kept translucent to stay in-theme
+const PODIUM = {
+  1: { height: 148, ring: 'rgba(255,176,32,0.75)', tint: 'rgba(255,176,32,0.16)', label: T.gold },
+  2: { height: 108, ring: 'rgba(199,206,214,0.55)', tint: 'rgba(199,206,214,0.10)', label: T.silver },
+  3: { height: 88, ring: 'rgba(208,138,78,0.55)', tint: 'rgba(208,138,78,0.12)', label: T.bronze },
+} as const
 
 export default function RankingScreen() {
   const insets = useSafeAreaInsets()
@@ -34,151 +44,140 @@ export default function RankingScreen() {
   const remaining = list.slice(3)
 
   // Order podium for visual rendering: 2nd on left, 1st in center, 3rd on right
-  const visualPodium = [
-    podium[1], // 2nd Place
-    podium[0], // 1st Place
-    podium[2], // 3rd Place
-  ]
+  const visualPodium = [podium[1], podium[0], podium[2]]
 
   return (
-    <View className="flex-1 bg-[#08160e]">
+    <View className="flex-1 bg-canvas">
       <ScreenBackground />
 
       <ScrollView
         contentContainerStyle={{
-          paddingTop: insets.top + 16,
-          paddingBottom: insets.bottom + 100,
+          paddingTop: insets.top + 18,
+          paddingBottom: insets.bottom + 104,
         }}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View className="px-5 mb-6">
-          <Text className="text-white text-2xl font-bold font-sans">Tabla de Posiciones</Text>
-          <Text className="text-gray-400 text-sm mt-1">Conoce a los máximos protectores del arbolado de Cochabamba</Text>
+        <View className="px-[22px] mb-6">
+          <Text className="text-body text-[26px] font-extrabold" style={{ letterSpacing: -0.5 }}>
+            Tabla de Posiciones
+          </Text>
+          <Text className="text-muted text-sm mt-1.5 leading-5">
+            Conoce a los máximos protectores del arbolado de Cochabamba
+          </Text>
         </View>
 
-        {/* Weekly / All Time Toggle */}
-        <View className="px-5 mb-8">
-          <View className="flex-row bg-[#0d2419] border border-[#2fe06a]/10 rounded-2xl p-1">
-            <TouchableOpacity
-              onPress={() => setTab('weekly')}
-              className={`flex-1 py-3 rounded-xl items-center ${
-                tab === 'weekly' ? 'bg-[#2fe06a]' : ''
-              }`}
-            >
-              <Text className={`font-bold text-sm ${tab === 'weekly' ? 'text-[#04230f]' : 'text-gray-400'}`}>
-                Semanal
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setTab('alltime')}
-              className={`flex-1 py-3 rounded-xl items-center ${
-                tab === 'alltime' ? 'bg-[#2fe06a]' : ''
-              }`}
-            >
-              <Text className={`font-bold text-sm ${tab === 'alltime' ? 'text-[#04230f]' : 'text-gray-400'}`}>
-                Histórico
-              </Text>
-            </TouchableOpacity>
+        {/* Weekly / All-time segmented control */}
+        <View className="px-[22px] mb-8">
+          <View className="flex-row bg-surface border border-hairline-2 rounded-2xl p-1">
+            {([['weekly', 'Semanal'], ['alltime', 'Histórico']] as const).map(([key, label]) => {
+              const active = tab === key
+              return (
+                <Pressable key={key} onPress={() => setTab(key)} className="flex-1">
+                  {active ? (
+                    <LinearGradient
+                      colors={[T.bright, T.brightDeep]}
+                      start={{ x: 0.5, y: 0 }}
+                      end={{ x: 0.5, y: 1 }}
+                      style={{ borderRadius: 12, paddingVertical: 11, alignItems: 'center' }}
+                    >
+                      <Text className="font-extrabold text-sm text-ink">{label}</Text>
+                    </LinearGradient>
+                  ) : (
+                    <View className="py-[11px] items-center">
+                      <Text className="font-bold text-sm text-muted">{label}</Text>
+                    </View>
+                  )}
+                </Pressable>
+              )
+            })}
           </View>
         </View>
 
-        {/* Visually Stunning Podium */}
-        <View className="flex-row items-end justify-center px-5 mb-8 h-56">
-          {visualPodium.map((user, idx) => {
+        {/* Podium */}
+        <View className="flex-row items-end justify-center px-[22px] mb-8">
+          {visualPodium.map((user) => {
             if (!user) return null
-            const isFirst = user.rank === 1
-            const isSecond = user.rank === 2
-            const isThird = user.rank === 3
-
-            let heightClass = 'h-32'
-            let bgPodium = 'bg-green-950/40 border-green-900/30'
-            let trophyColor = 'text-gray-400'
-            let borderProfile = 'border-gray-500'
-
-            if (isFirst) {
-              heightClass = 'h-40'
-              bgPodium = 'bg-green-900/50 border-[#2fe06a]/30'
-              trophyColor = 'text-[#ffb020]'
-              borderProfile = 'border-[#ffb020]'
-            } else if (isSecond) {
-              heightClass = 'h-28'
-              bgPodium = 'bg-green-950/30 border-gray-700/30'
-              trophyColor = 'text-gray-300'
-              borderProfile = 'border-gray-300'
-            } else if (isThird) {
-              heightClass = 'h-24'
-              bgPodium = 'bg-green-950/20 border-orange-900/30'
-              trophyColor = 'text-amber-600'
-              borderProfile = 'border-amber-600'
-            }
-
+            const p = PODIUM[user.rank as 1 | 2 | 3]
             return (
-              <View key={user.name} className="items-center mx-2 flex-1">
-                {/* Profile bubble with custom initials */}
+              <View key={user.name} className="items-center mx-1.5 flex-1">
+                {user.rank === 1 && (
+                  <View className="mb-1.5">
+                    <CrownIcon size={18} color={T.gold} />
+                  </View>
+                )}
+
+                {/* Avatar */}
                 <View
-                  className={`w-14 h-14 rounded-full border-2 ${borderProfile} items-center justify-center bg-[#0d2419] mb-2`}
+                  className="w-14 h-14 rounded-full items-center justify-center mb-2"
+                  style={{
+                    backgroundColor: p.tint,
+                    borderWidth: 1.5,
+                    borderColor: p.ring,
+                  }}
                 >
-                  <Text className={`text-sm font-black ${isFirst ? 'text-[#ffb020]' : 'text-white'}`}>
+                  <Text className="text-sm font-extrabold" style={{ color: user.rank === 1 ? T.gold : T.text }}>
                     {user.initials}
                   </Text>
-                  {isFirst && (
-                    <View className="absolute -top-5">
-                      <Text style={{ fontSize: 13, color: '#ffb020', fontWeight: 'bold' }}>⭐</Text>
-                    </View>
-                  )}
                 </View>
 
-                <Text className="text-white text-xs font-bold text-center w-20 mb-1" numberOfLines={1}>
+                <Text className="text-body text-xs font-bold text-center w-20 mb-0.5" numberOfLines={1}>
                   {user.active ? 'Tú' : `@${user.name}`}
                 </Text>
-                <Text className="text-[#2fe06a] text-[10px] font-bold mb-2">
-                  {user.points} pts
-                </Text>
+                <Text className="text-leaf text-[10px] font-bold mb-2.5">{user.points} pts</Text>
 
-                {/* Podium pillar */}
-                <View className={`w-full ${heightClass} ${bgPodium} border-t border-x rounded-t-2xl items-center justify-center`}>
-                  <Text className={`text-2xl font-extrabold ${trophyColor}`}>
+                {/* Pillar — translucent gradient fading into the background */}
+                <LinearGradient
+                  colors={[p.tint, 'rgba(255,255,255,0.015)']}
+                  start={{ x: 0.5, y: 0 }}
+                  end={{ x: 0.5, y: 1 }}
+                  style={{
+                    width: '100%',
+                    height: p.height,
+                    borderTopLeftRadius: 18,
+                    borderTopRightRadius: 18,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text className="text-2xl font-extrabold" style={{ color: p.label, letterSpacing: -0.5 }}>
                     {user.rank}
                   </Text>
-                  <Text className="text-gray-400 text-[10px] mt-1 font-semibold">
+                  <Text className="text-faint text-[10px] mt-1 font-semibold">
                     {user.trees} {user.trees === 1 ? 'árbol' : 'árboles'}
                   </Text>
-                </View>
+                </LinearGradient>
               </View>
             )
           })}
         </View>
 
-        {/* Scrollable Leaderboard List */}
-        <View className="px-5">
+        {/* Remaining list */}
+        <View className="px-[22px]">
           {remaining.map((user) => (
-            <View
+            <Card
               key={user.name}
-              className={`flex-row items-center justify-between p-4 rounded-2xl mb-3 border ${
-                user.active
-                  ? 'bg-[#122e20] border-[#2fe06a]/30'
-                  : 'bg-[#0d2419] border-[#2fe06a]/10'
+              className={`flex-row items-center justify-between p-4 rounded-2xl mb-3 ${
+                user.active ? 'bg-well border-hairline' : ''
               }`}
             >
               <View className="flex-row items-center">
-                <Text className="text-gray-400 font-bold text-sm w-6 text-center">{user.rank}</Text>
-                <View className="w-10 h-10 rounded-full bg-[#122e20] border border-green-900 items-center justify-center mx-3">
-                  <Text className="text-xs font-bold text-white">{user.initials}</Text>
+                <Text className="text-faint font-bold text-sm w-6 text-center">{user.rank}</Text>
+                <View className="w-10 h-10 rounded-full bg-surface-hi items-center justify-center mx-3">
+                  <Text className="text-xs font-bold text-body">{user.initials}</Text>
                 </View>
                 <View>
-                  <Text className="text-white font-bold text-sm">
+                  <Text className="text-body font-bold text-sm">
                     {user.active ? 'Tú' : `@${user.name}`}
                   </Text>
-                  <Text className="text-gray-400 text-xs mt-0.5">
+                  <Text className="text-muted text-xs mt-0.5">
                     {user.trees} árboles registrados
                   </Text>
                 </View>
               </View>
 
-              <Text className="text-[#2fe06a] font-extrabold text-sm">{user.points} pts</Text>
-            </View>
+              <Text className="text-leaf font-extrabold text-sm">{user.points} pts</Text>
+            </Card>
           ))}
         </View>
       </ScrollView>

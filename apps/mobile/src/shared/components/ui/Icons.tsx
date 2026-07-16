@@ -226,3 +226,21 @@ export const CloseIcon = ({ size = 24, color = '#eaf6ee' }: IconProps) => (
     <Path d="M18 6L6 18M6 6l12 12" stroke={color} strokeWidth={2} strokeLinecap="round" />
   </Svg>
 )
+
+export const ChevronRightIcon = ({ size = 24, color = 'rgba(205,225,212,0.4)' }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M9 18l6-6-6-6" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+)
+
+export const CrownIcon = ({ size = 24, color = '#ffb020' }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M4 18h16M4 18L2.5 8.5 8 12l4-6.5L16 12l5.5-3.5L20 18"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+)

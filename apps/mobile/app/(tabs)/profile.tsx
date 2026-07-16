@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase'
 import { ScreenBackground } from '@/shared/components/ui/ScreenBackground'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { getMyStats, type MyStats } from '@/features/profile/api'
+import { T, glow } from '@/shared/theme'
+import { Card, SectionTitle, IconWell } from '@/shared/components/ui/Kit'
 import {
   UserIcon,
   LeafIcon,
@@ -13,6 +15,7 @@ import {
   TrophyIcon,
   TicketIcon,
   LockIcon,
+  ChevronRightIcon,
 } from '@/shared/components/ui/Icons'
 
 // Insignias derivadas de contadores reales (sin schema nuevo). Las de racha/ranking
@@ -30,6 +33,8 @@ function buildBadges(s: MyStats) {
 
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
+const SETTINGS_ROWS = ['Editar Perfil', 'Historial de Transacciones', 'Términos y Privacidad']
+
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets()
   const statsQ = useQuery({ queryKey: ['myStats'], queryFn: getMyStats })
@@ -42,119 +47,123 @@ export default function ProfileScreen() {
   const joined = s ? `Miembro desde ${MONTHS[new Date(s.createdAt).getMonth()]} ${new Date(s.createdAt).getFullYear()}` : ''
   const badges = s ? buildBadges(s) : []
 
+  const stats = [
+    { label: 'Mapeados', value: `${s?.mapped ?? 0}`, Icon: LeafIcon },
+    { label: 'Verificados', value: `${s?.validated ?? 0}`, Icon: SearchIcon },
+    { label: 'CO2 estim.', value: `${s?.co2Kg ?? 0} kg`, Icon: CO2Icon },
+  ]
+
   return (
-    <View className="flex-1 bg-[#08160e]">
+    <View className="flex-1 bg-canvas">
       <ScreenBackground />
 
       <ScrollView
         contentContainerStyle={{
-          paddingTop: insets.top + 16,
-          paddingBottom: insets.bottom + 100,
-          paddingHorizontal: 20,
+          paddingTop: insets.top + 24,
+          paddingBottom: insets.bottom + 104,
+          paddingHorizontal: 22,
         }}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View className="items-center mb-6">
-          <View className="w-24 h-24 rounded-full bg-[#122e20] border-2 border-[#2fe06a] items-center justify-center mb-3 shadow-lg">
-            <UserIcon size={36} color="#2fe06a" />
+        <View className="items-center mb-8">
+          {/* Avatar — quiet glow ring instead of a hard 2px border */}
+          <View style={[{ borderRadius: 48 }, glow(0.4, 16)]}>
+            <View
+              className="w-24 h-24 rounded-full bg-well items-center justify-center"
+              style={{ borderWidth: 1.5, borderColor: 'rgba(120,230,150,0.45)' }}
+            >
+              <UserIcon size={36} color={T.bright} />
+            </View>
           </View>
-          <Text className="text-white text-xl font-bold font-sans">@{s?.username ?? '…'}</Text>
+          <Text className="text-body text-[22px] font-extrabold mt-3.5" style={{ letterSpacing: -0.4 }}>
+            @{s?.username ?? '…'}
+          </Text>
           {s ? (
-            <Text className="text-[#2fe06a] text-xs font-bold mt-1">Nivel {s.level} · {s.points} pts</Text>
+            <Text className="text-leaf text-xs font-bold mt-1">Nivel {s.level} · {s.points} pts</Text>
           ) : null}
           {joined ? (
-            <Text className="text-[#2fe06a] text-[10px] font-bold mt-2.5 uppercase tracking-widest bg-[#2fe06a]/10 px-3 py-1 rounded-full">
-              {joined}
-            </Text>
+            <View className="bg-surface border border-hairline-2 rounded-full px-3.5 py-1.5 mt-3">
+              <Text className="text-muted text-[10px] font-bold uppercase" style={{ letterSpacing: 1.5 }}>
+                {joined}
+              </Text>
+            </View>
           ) : null}
         </View>
 
-        {/* Stats Grid */}
+        {/* Stats */}
         {statsQ.isLoading ? (
-          <View className="items-center py-8 mb-8"><ActivityIndicator color="#2fe06a" /></View>
+          <View className="items-center py-8 mb-8"><ActivityIndicator color={T.bright} /></View>
         ) : (
-          <View className="flex-row gap-4 mb-8">
-            <View className="flex-1 bg-[#0d2419] border border-[#2fe06a]/10 rounded-2xl p-4 items-center shadow-sm">
-              <LeafIcon size={28} color="#2fe06a" />
-              <Text className="text-white text-xl font-extrabold mt-1.5">{s?.mapped ?? 0}</Text>
-              <Text className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mt-0.5 text-center">Mapeados</Text>
-            </View>
-            <View className="flex-1 bg-[#0d2419] border border-[#2fe06a]/10 rounded-2xl p-4 items-center shadow-sm">
-              <SearchIcon size={28} color="#2fe06a" />
-              <Text className="text-white text-xl font-extrabold mt-1.5">{s?.validated ?? 0}</Text>
-              <Text className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mt-0.5 text-center">Verificados</Text>
-            </View>
-            <View className="flex-1 bg-[#0d2419] border border-[#2fe06a]/10 rounded-2xl p-4 items-center shadow-sm">
-              <CO2Icon size={28} color="#2fe06a" />
-              <Text className="text-white text-xl font-extrabold mt-1.5">{s?.co2Kg ?? 0} kg</Text>
-              <Text className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mt-0.5 text-center">CO2 estim.</Text>
-            </View>
+          <View className="flex-row gap-3 mb-8">
+            {stats.map((st) => (
+              <Card key={st.label} className="flex-1 p-4 items-center rounded-2xl">
+                <st.Icon size={24} color={T.bright} />
+                <Text className="text-body text-xl font-extrabold mt-2" style={{ letterSpacing: -0.4 }}>
+                  {st.value}
+                </Text>
+                <Text
+                  className="text-faint text-[10px] font-bold uppercase mt-0.5 text-center"
+                  style={{ letterSpacing: 1 }}
+                >
+                  {st.label}
+                </Text>
+              </Card>
+            ))}
           </View>
         )}
 
-        {/* Badges / Medals Section */}
+        {/* Badges */}
         <View className="mb-8">
-          <Text className="text-white text-lg font-bold mb-4">Mis Logros e Insignias</Text>
+          <SectionTitle title="Mis Logros e Insignias" />
 
-          <View className="flex-row flex-wrap gap-4 justify-between">
+          <View className="flex-row flex-wrap justify-between" style={{ rowGap: 14 }}>
             {badges.map((badge) => (
-              <View
+              <Card
                 key={badge.id}
-                className={`w-[47%] bg-[#0d2419] border rounded-2xl p-4 items-center ${
-                  badge.unlocked
-                    ? 'border-[#2fe06a]/20'
-                    : 'border-green-950/20 opacity-50'
-                }`}
+                className={`w-[48%] p-4 items-center rounded-2xl ${badge.unlocked ? '' : 'opacity-45'}`}
               >
-                <View
-                  className={`w-12 h-12 rounded-full items-center justify-center mb-2 ${
-                    badge.unlocked ? 'bg-[#122e20]' : 'bg-gray-900/60'
-                  }`}
-                >
+                <IconWell size={46} className="mb-2.5">
                   {badge.unlocked ? (
-                    <badge.Icon size={22} color="#2fe06a" />
+                    <badge.Icon size={21} color={T.bright} />
                   ) : (
-                    <LockIcon size={20} color="#9ca3af" />
+                    <LockIcon size={18} color={T.faint} />
                   )}
-                </View>
-                <Text
-                  className={`font-bold text-center text-xs ${
-                    badge.unlocked ? 'text-white' : 'text-gray-500'
-                  }`}
-                >
+                </IconWell>
+                <Text className={`font-bold text-center text-xs ${badge.unlocked ? 'text-body' : 'text-muted'}`}>
                   {badge.name}
                 </Text>
-                <Text className="text-gray-400 text-[9px] text-center mt-1 leading-4">
+                <Text className="text-faint text-[10px] text-center mt-1 leading-4">
                   {badge.desc}
                 </Text>
-              </View>
+              </Card>
             ))}
           </View>
         </View>
 
-        {/* Configuration Shortcuts */}
-        <View className="bg-[#0d2419] border border-[#2fe06a]/10 rounded-2xl p-4 mb-8">
-          <TouchableOpacity className="flex-row justify-between items-center py-2.5 border-b border-green-950">
-            <Text className="text-white text-sm font-semibold">Editar Perfil</Text>
-            <Text className="text-gray-400">➡️</Text>
-          </TouchableOpacity>
-          <TouchableOpacity className="flex-row justify-between items-center py-2.5 border-b border-green-950">
-            <Text className="text-white text-sm font-semibold">Historial de Transacciones</Text>
-            <Text className="text-gray-400">➡️</Text>
-          </TouchableOpacity>
-          <TouchableOpacity className="flex-row justify-between items-center py-2.5">
-            <Text className="text-white text-sm font-semibold">Términos y Privacidad</Text>
-            <Text className="text-gray-400">➡️</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Settings */}
+        <Card className="px-4 py-1 mb-7 rounded-2xl">
+          {SETTINGS_ROWS.map((label, i) => (
+            <TouchableOpacity
+              key={label}
+              activeOpacity={0.7}
+              className={`flex-row justify-between items-center py-4 ${
+                i < SETTINGS_ROWS.length - 1 ? 'border-b border-hairline-2' : ''
+              }`}
+            >
+              <Text className="text-body text-sm font-semibold">{label}</Text>
+              <ChevronRightIcon size={17} color={T.faint} />
+            </TouchableOpacity>
+          ))}
+        </Card>
 
-        {/* Sign Out Button */}
+        {/* Sign out */}
         <TouchableOpacity
-          className="border border-red-500/30 bg-red-950/10 rounded-xl py-4 items-center mb-8"
+          activeOpacity={0.8}
+          className="bg-surface border border-hairline-2 rounded-2xl py-4 items-center mb-8"
           onPress={handleSignOut}
         >
-          <Text className="text-red-500 font-bold text-sm">Cerrar sesión</Text>
+          <Text className="text-red-400/90 font-bold text-sm">Cerrar sesión</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
