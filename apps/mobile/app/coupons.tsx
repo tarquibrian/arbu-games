@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, Modal, ActivityIndicator } from 'react-native'
-import { router } from 'expo-router'
+import { goBack } from '@/shared/lib/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { ScreenBackground } from '@/shared/components/ui/ScreenBackground'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -41,7 +41,7 @@ export default function CouponsScreen() {
         {/* Header */}
         <View className="flex-row items-center mb-6">
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={goBack}
             className="mr-4 w-10 h-10 rounded-full bg-[#122e20] items-center justify-center border border-green-900"
           >
             <Text className="text-white text-base">←</Text>
@@ -61,7 +61,7 @@ export default function CouponsScreen() {
         ) : items.length === 0 ? (
           <View className="bg-[#0d2419] border border-[#2fe06a]/10 rounded-2xl p-8 items-center">
             <Text className="text-gray-400 text-sm text-center">Aún no canjeaste cupones.{'\n'}Canjeá ArbuCoins en la Billetera Verde.</Text>
-            <TouchableOpacity onPress={() => router.back()} className="mt-4 bg-[#2fe06a] px-5 py-2.5 rounded-xl">
+            <TouchableOpacity onPress={goBack} className="mt-4 bg-[#2fe06a] px-5 py-2.5 rounded-xl">
               <Text className="text-[#04230f] text-xs font-bold">Ir al catálogo</Text>
             </TouchableOpacity>
           </View>

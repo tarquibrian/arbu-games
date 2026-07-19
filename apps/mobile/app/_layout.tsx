@@ -1,11 +1,17 @@
 import '../global.css'
 import { useEffect } from 'react'
+import { LogBox } from 'react-native'
 import { Slot } from 'expo-router'
 import { QueryClientProvider } from '@tanstack/react-query'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { queryClient } from '@/lib/queryClient'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/features/auth/store/authStore'
+
+// supabase-js's background auto-refresh logs this via console.error even though
+// it's already handled internally (falls back to signed-out) — known upstream
+// quirk, not a real crash. Silence just this message, not console.error broadly.
+LogBox.ignoreLogs(['AuthApiError: Invalid Refresh Token'])
 
 export default function RootLayout() {
   const { setSession, setLoading, setHasSeenOnboarding } = useAuthStore()

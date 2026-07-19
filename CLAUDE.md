@@ -8,19 +8,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository layout (monorepo)
 
-- `apps/mobile/` — the actual product: an Expo / React Native app. **Has its own `apps/mobile/CLAUDE.md`** with stack-specific gotchas — read it before touching mobile code.
-- `docs/` — the strategic product design (source of truth for WHAT to build). `arbu-games-documento-base.md` is the canonical base document; `.docx`/`.pdf` are derived exports of it. `guia-materiales-derivados.md` covers derived materials.
+- `apps/mobile/` — the citizen-facing product: an Expo / React Native app. **Has its own `apps/mobile/CLAUDE.md`** with stack-specific gotchas — read it before touching mobile code.
+- `apps/admin/` — internal team tool (Next.js, `service_role`, allowlist-gated via `admin_users`). Manages merchants, coupons, and merchant account provisioning.
+- `apps/merchant/` — comercio-facing tool (Next.js, RLS via `merchant_members`). Login + QR/manual redemption validation against a comercio's own coupons.
+- `docs/` — the strategic product design (source of truth for WHAT to build, not necessarily what's built yet). `arbu-games-documento-base.md` is the canonical base document; `.docx`/`.pdf` are derived exports of it. `guia-materiales-derivados.md` covers derived materials.
 - `test/design/` — reference designs (plain JSX/HTML web mockups + screenshots). Mobile screens are migrated FROM these; consult them for intended visuals.
+- root `README.md` — **local setup instructions for all 3 apps + the shared Supabase backend.** Read this first if you're trying to get the project running.
 - root `package.json` — only carries `docx` (tooling to export the design doc). No app code lives at root; the `test` script is a placeholder.
 
 ## Current build status (read this first)
 
-`apps/mobile` is a **UI prototype, not a functional MVP**. Do not assume anything is wired:
+The core citizen loop is wired end-to-end against a real (locally-hosted) Supabase backend across all 3 apps — this is **not** a mock-data prototype anymore:
 
-- All screens use **hardcoded mock data**; submit/redeem handlers show `Alert`s and mutate local state — there are **no real Supabase reads/writes** yet.
-- `apps/mobile/src/types/database.types.ts` is a **hand-written placeholder schema**; the Supabase project is not created/connected.
-- **`docs/` is ahead of the code.** Many decisions specified in the base document are not yet in the schema or screens (e.g. tree `origin` plantado/existente, species capture in the register form, GPS accuracy + duplicate detection, the coupon entity with claim/use windows + `app`-vs-`en el lugar` redemption + tiers, merchant entity, the Pending→Estancado→No-verificable state machine, re-monitoring, audit/flag flows, merchant portal). When building, treat `docs/arbu-games-documento-base.md` as the spec and the current screens as visual scaffolding.
-- Minor known drift: register-form health labels are Spanish (`Bueno/Regular/Pobre/Muerto`) while the schema enum is English (`good/regular/poor/dead`); `apps/mobile/CLAUDE.md`'s tab list is itself stale vs the actual `app/(tabs)/` files.
+- **Schema**: `apps/mobile/supabase/migrations/0001`–`0005` — `trees`, `tree_validations`, `coupons`, `coupon_redemptions`, `merchants`, `merchant_members`, `admin_users`, `wallet_transactions`, `app_config` (server-tunable knobs like `earn_rate`), all with RLS + server-authoritative triggers/RPCs (client never sets `status`, `validations_count`, `coins`, etc. directly).
+- **Mobile**: register a tree (live photo → Storage, DAP, health) → real insert, starts `pending`; community "1+3" verification (`tree/verify.tsx`) — 3 distinct non-owner users validate on-site, trigger pays out on the 3rd and flips status to `validated`; "Explorar Árboles" (`tree/explore.tsx`) is a read-only map of the whole known population with aggregate stats (species, validated count, new this week, estimated CO2); wallet/coupons are fully live — balance, catalog, redeem (mints a real scannable QR via `react-native-qrcode-svg`), "Mis Cupones"; profile/home stats are derived from real server-side counters (mapped/validated/CO2/level), not hardcoded numbers.
+- **Admin** (`apps/admin`): merchant + coupon CRUD, merchant account provisioning (creates the Supabase Auth user + `merchant_members` row in one action). First admin account is bootstrapped via a CLI script, not a UI — see root `README.md`.
+- **Merchant** (`apps/merchant`): camera-based QR scanner (real `getUserMedia` + `jsQR`, not a placeholder) with a manual-code fallback, both calling the atomic `validate_redemption()` RPC — single-use, scoped to the logged-in comercio's own coupons.
+- **Dev-only test accounts**: the mobile login screen has "Invitado A" / "Invitado B" quick-login buttons, `__DEV__`-gated. These are fixed, reusable throwaway accounts (unlike anonymous sign-in, they persist state across app restarts) specifically so you can exercise multi-user flows — the 1+3 validation loop, a coupon claimed by one account and redeemed at the merchant — by switching between two accounts instead of juggling real emails. See root `README.md` for exact credentials.
+- **`docs/` is still ahead of the code for Phase 2 items**: sponsored missions, referrals, communities, global cash-linked ranking, merchant self-service portal (see `docs/arbu-games-documento-base.md` §12.3, §13.6, §13.8). Treat those sections as future spec, not a build gap in the current MVP.
+- Minor known drift: register-form health labels are Spanish (`Bueno/Regular/Pobre/Muerto`) while the schema enum is English (`good/regular/poor/dead`) — mapped explicitly in `src/features/trees/api.ts`, not a bug.
 
 ## Mobile app — commands
 
@@ -37,8 +43,8 @@ There is no test runner or linter configured. Type-check with `npx tsc --noEmit`
 
 ## Mobile app — architecture (big picture)
 
-- **Routing:** Expo Router (file-based) under `app/`. Route groups: `(auth)` (login/register) and `(tabs)` (main app), plus `tree/` (register, verify, detail). `_layout.tsx` files own the auth guards and redirects.
-- **Intended backend:** Supabase (`src/lib/supabase.ts`), typed via `src/types/database.types.ts`. Core tables in the placeholder schema: `profiles` (coins, counters), `trees` (status `pending|validated|rejected`, `validations_count`), `tree_validations` (the 1+3 verification records), `wallet_transactions` (`earn|redeem`).
+- **Routing:** Expo Router (file-based) under `app/`. Route groups: `(auth)` (login/register) and `(tabs)` (main app: `index` Inicio, `plus` action-sheet modal for Mapear/Verificar/Explorar, `profile`, `ranking`, `rewards`), plus `tree/` (`new` register, `[id]` detail, `verify` 1+3, `explore` read-only map). `_layout.tsx` files own the auth guards and redirects.
+- **Backend:** Supabase (`src/lib/supabase.ts`), typed via `src/types/database.types.ts` (generated from the real schema now, not hand-written). Core tables: `profiles` (coins, counters), `trees` (status `pending|stalled|validated|unverifiable|rejected`, `validations_count`), `tree_validations` (the 1+3 verification records), `coupons`/`coupon_redemptions`/`merchants` (green-loyalty loop), `wallet_transactions` (`earn|redeem`).
 - **State:** auth via **Zustand** (`src/features/auth/store/`), set by the root layout's `supabase.auth.onAuthStateChange` listener; server state via **TanStack React Query** (`src/lib/queryClient.ts`); simple persistence via **AsyncStorage** (Expo Go compatible). Path alias `@/*` → `./src/*`.
 - **Styling:** NativeWind v4 (Tailwind v3). Dark-green theme; shared `ScreenBackground` owns the app background. See `apps/mobile/CLAUDE.md` for the SVG/gradient/shadow translation rules and version constraints (SDK 56, Tailwind must stay v3, MMKV incompatible with Expo Go, etc.).
 

@@ -1,18 +1,21 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { View, Text, TouchableOpacity, Alert, Modal, ActivityIndicator } from 'react-native'
-import { router } from 'expo-router'
+import { goBack } from '@/shared/lib/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import * as ImagePicker from 'expo-image-picker'
 import { ScreenBackground } from '@/shared/components/ui/ScreenBackground'
+import { ScreenHeader } from '@/shared/components/ui/ScreenHeader'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MapView, { Marker } from 'react-native-maps'
-import { CameraIcon, CheckIcon } from '@/shared/components/ui/Icons'
+import { CameraIcon, CheckIcon, LeafIcon } from '@/shared/components/ui/Icons'
+import { MapPin } from '@/shared/components/ui/MapPin'
+import { StatTile } from '@/shared/components/ui/StatTile'
 import {
   listPendingTrees,
   createValidation,
   uploadTreePhoto,
   type PendingTree,
 } from '@/features/trees/api'
+import { requestTreePhotoPermission, launchTreePhotoCapture } from '@/features/trees/photoSource'
 
 const HEALTH_ES: Record<string, { label: string; dot: string }> = {
   good: { label: 'Bueno', dot: 'bg-green-500' },
@@ -33,6 +36,17 @@ export default function VerifyTreeScreen() {
 
   const treesQ = useQuery({ queryKey: ['pendingTrees'], queryFn: listPendingTrees })
   const trees = treesQ.data ?? []
+
+  // Qué tan lejos está cada árbol de validarse — ayuda a decidir a cuál ir primero
+  // (uno a 1 verificación es un "quick win": tu visita lo completa al toque).
+  const stats = useMemo(() => {
+    const actionable = trees.filter((t) => !t.isMine && !t.validatedByMe)
+    return {
+      almostThere: actionable.filter((t) => t.validations_count === 2).length,
+      freshlyMapped: actionable.filter((t) => t.validations_count === 0).length,
+      verifiedByMe: trees.filter((t) => t.validatedByMe).length,
+    }
+  }, [trees])
 
   const verifyM = useMutation({
     mutationFn: async ({ tree, base64 }: { tree: PendingTree; base64: string }) => {
@@ -57,13 +71,13 @@ export default function VerifyTreeScreen() {
 
   const capturePhoto = async () => {
     if (!selected) return
-    const perm = await ImagePicker.requestCameraPermissionsAsync()
+    const perm = await requestTreePhotoPermission()
     if (!perm.granted) {
       Alert.alert('Permiso requerido', 'Necesitamos la cámara para la foto de verificación.')
       return
     }
     try {
-      const r = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.6, allowsEditing: false })
+      const r = await launchTreePhotoCapture()
       if (r.canceled || !r.assets?.[0]?.base64) return
       verifyM.mutate({ tree: selected, base64: r.assets[0].base64 })
     } catch (e: any) {
@@ -83,32 +97,29 @@ export default function VerifyTreeScreen() {
     <View className="flex-1 bg-[#08160e]">
       <ScreenBackground />
 
-      <View className="flex-row items-center px-5 py-4 bg-[#08160e]/95 border-b border-green-950/30 z-10" style={{ paddingTop: insets.top }}>
-        <TouchableOpacity onPress={() => router.back()} className="mr-4 w-10 h-10 rounded-full bg-[#122e20] items-center justify-center border border-green-900">
-          <Text className="text-white text-base">←</Text>
-        </TouchableOpacity>
-        <View className="flex-1">
-          <Text className="text-white font-bold text-lg">Monitorear y Verificar</Text>
-          <Text className="text-gray-400 text-xs mt-0.5">
-            {treesQ.isLoading ? 'Cargando árboles pendientes…' : `${trees.length} árbol${trees.length === 1 ? '' : 'es'} por verificar cerca`}
-          </Text>
-        </View>
-      </View>
+      <ScreenHeader
+        title="Monitorear y Verificar"
+        subtitle={treesQ.isLoading ? 'Cargando árboles pendientes…' : `${trees.length} árbol${trees.length === 1 ? '' : 'es'} por verificar cerca`}
+        onBack={goBack}
+      />
 
       <View className="flex-1 relative">
-        <MapView style={{ flex: 1 }} region={region}>
+        <MapView style={{ flex: 1 }} region={region} showsPointsOfInterests={false}>
           {trees.map((tree) => (
             <Marker
               key={tree.id}
               coordinate={{ latitude: tree.latitude, longitude: tree.longitude }}
               onPress={() => { setSelected(tree); setStep(1) }}
             >
-              <View className="items-center justify-center">
-                <View className="bg-[#2fe06a] border-2 border-white w-9 h-9 rounded-full items-center justify-center shadow-lg">
-                  <Text className="text-[10px] font-extrabold text-[#04230f]">{tree.validations_count}/3</Text>
-                </View>
-                <View className="w-1.5 h-1.5 bg-[#2fe06a] rotate-45 -mt-1 border-r border-b border-white" />
-              </View>
+              <MapPin size={34} color={tree.isMine ? '#2563eb' : tree.validatedByMe ? '#122e20' : '#2fe06a'}>
+                {tree.isMine ? (
+                  <LeafIcon size={14} color="#dbeafe" />
+                ) : tree.validatedByMe ? (
+                  <CheckIcon size={14} color="#2fe06a" />
+                ) : (
+                  <Text className="text-[9px] font-extrabold text-[#04230f]">{tree.validations_count}/3</Text>
+                )}
+              </MapPin>
             </Marker>
           ))}
         </MapView>
@@ -118,6 +129,21 @@ export default function VerifyTreeScreen() {
           <View className="absolute top-6 left-5 right-5 bg-[#0d2419] border border-[#2fe06a]/20 rounded-2xl p-4">
             <Text className="text-white text-sm font-bold text-center">No hay árboles pendientes cerca</Text>
             <Text className="text-gray-400 text-xs text-center mt-1">Registra uno nuevo o vuelve más tarde.</Text>
+          </View>
+        )}
+
+        {/* A dónde ir primero — sin esto el mapa no dice cuáles valen la pena visitar
+            ni si ya aportaste algo. */}
+        {!treesQ.isLoading && trees.length > 0 && !selected && (
+          <View
+            className="absolute bottom-0 left-0 right-0 bg-[#0d2419]/95 border-t border-[#2fe06a]/20 px-4 pt-3.5"
+            style={{ paddingBottom: insets.bottom + 12 }}
+          >
+            <View className="flex-row">
+              <StatTile value={stats.almostThere} label="A 1 de validarse" color="#2fe06a" />
+              <StatTile value={stats.freshlyMapped} label="Recién mapeados" color="#fbbf24" />
+              <StatTile value={stats.verifiedByMe} label="Ya verificaste" />
+            </View>
           </View>
         )}
 
@@ -149,10 +175,24 @@ export default function VerifyTreeScreen() {
               </View>
             </View>
 
-            <TouchableOpacity onPress={startVerify} className="bg-[#2fe06a] w-full rounded-xl py-3.5 items-center shadow-md">
-              <Text className="text-[#04230f] font-extrabold text-sm">Validar en el Lugar</Text>
-            </TouchableOpacity>
-            <Text className="text-gray-500 text-[11px] text-center mt-2">Ganás 30 AC cuando el árbol llegue a 3 verificaciones.</Text>
+            {selected.isMine ? (
+              <View className="bg-blue-900/20 border border-blue-500/25 rounded-xl py-3.5 items-center flex-row justify-center gap-2">
+                <LeafIcon size={16} color="#60a5fa" />
+                <Text className="text-blue-400 font-bold text-sm">Es tu árbol — esperando otros verificadores</Text>
+              </View>
+            ) : selected.validatedByMe ? (
+              <View className="bg-green-900/20 border border-[#2fe06a]/25 rounded-xl py-3.5 items-center flex-row justify-center gap-2">
+                <CheckIcon size={16} color="#2fe06a" />
+                <Text className="text-[#2fe06a] font-bold text-sm">Ya verificaste este árbol</Text>
+              </View>
+            ) : (
+              <>
+                <TouchableOpacity onPress={startVerify} className="bg-[#2fe06a] w-full rounded-xl py-3.5 items-center shadow-md">
+                  <Text className="text-[#04230f] font-extrabold text-sm">Validar en el Lugar</Text>
+                </TouchableOpacity>
+                <Text className="text-gray-500 text-[11px] text-center mt-2">Ganás 30 AC cuando el árbol llegue a 3 verificaciones.</Text>
+              </>
+            )}
           </View>
         )}
       </View>

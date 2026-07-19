@@ -13,6 +13,7 @@ import {
   UserIcon,
   LeafIcon,
   SearchIcon,
+  MapPinIcon,
 } from '@/shared/components/ui/Icons'
 
 export default function TabsLayout() {
@@ -165,6 +166,12 @@ export default function TabsLayout() {
                 Icon: SearchIcon,
                 to: '/tree/verify' as const,
               },
+              {
+                title: 'Explorar Árboles',
+                desc: 'Mira todos los árboles mapeados en Cochabamba y su información',
+                Icon: MapPinIcon,
+                to: '/tree/explore' as const,
+              },
             ].map((a, i) => (
               <TouchableOpacity
                 key={a.title}
@@ -181,7 +188,7 @@ export default function TabsLayout() {
                   borderColor: T.hairline2,
                   borderRadius: 18,
                   padding: 16,
-                  marginBottom: i === 0 ? 12 : 20,
+                  marginBottom: i === 2 ? 20 : 12,
                 }}
               >
                 <View style={{ marginRight: 14 }}>

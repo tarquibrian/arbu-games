@@ -8,8 +8,12 @@ import Svg, {
   Rect,
 } from 'react-native-svg'
 
-export function ScreenBackground() {
+export function ScreenBackground({ variant = 'gradient' }: { variant?: 'gradient' | 'black' }) {
   const { width, height } = useWindowDimensions()
+
+  if (variant === 'black') {
+    return <View style={[StyleSheet.absoluteFill, { backgroundColor: '#08160e' }]} />
+  }
 
   // CSS reference uses two bottom layers:
   //   1. radial-gradient(120% 80% at 50% 118%, rgba(48,224,106,0.40) 0%, transparent 55%) — wide glow

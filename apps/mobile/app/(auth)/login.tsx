@@ -4,7 +4,7 @@ import {
   ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator,
   Animated, Easing,
 } from 'react-native'
-import { router } from 'expo-router'
+import { goBack } from '@/shared/lib/navigation'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ScreenBackground } from '@/shared/components/ui/ScreenBackground'
@@ -156,15 +156,20 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets()
   const [tab, setTab] = useState<Tab>('signin')
 
-  // Login rápido SOLO dev: sesión anónima REAL de Supabase (JWT firmado por GoTrue).
-  // Nunca inyectar una sesión falsa — rompe supabase.auth.getUser() y todas las RLS.
+  // Login rápido SOLO dev: cuentas fijas con sesión REAL de Supabase (email+password,
+  // no mock). Permite alternar entre "Invitado A" y "Invitado B" conservando cada uno
+  // su propio estado (árboles, monedas) entre sesiones — a diferencia de signInAnonymously,
+  // que crea un usuario nuevo y descartable en cada tap.
   // onAuthStateChange (root _layout) fija la sesión → el guard redirige a (tabs).
-  const handleBypass = async () => {
+  const handleQuickLogin = async (user: { email: string; password: string }) => {
     if (status === 'loading') return
     setError('')
     setStatus('loading')
-    const { error: err } = await supabase.auth.signInAnonymously()
-    if (err) { setError(err.message); setStatus('idle'); return }
+    const { error: signInErr } = await supabase.auth.signInWithPassword(user)
+    if (signInErr) {
+      const { error: signUpErr } = await supabase.auth.signUp(user)
+      if (signUpErr) { setError(signUpErr.message); setStatus('idle'); return }
+    }
     setStatus('done')
   }
   const [email, setEmail] = useState('')
@@ -224,7 +229,7 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Back */}
-          <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
+          <Pressable onPress={goBack} style={s.backBtn} hitSlop={8}>
             <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
               <Path d="M15 18l-6-6 6-6" stroke={C.text} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
             </Svg>
@@ -312,18 +317,26 @@ export default function LoginScreen() {
             </LinearGradient>
           </Pressable>
 
-          {/* Dev-only quick login: sesión anónima REAL (no mock). Excluido de builds de producción. */}
+          {/* Dev-only quick login: cuentas fijas con sesión REAL (no mock). Excluido de builds de producción. */}
           {__DEV__ && (
-            <Pressable
-              onPress={handleBypass}
-              style={({ pressed }) => [
-                { marginTop: 16, alignItems: 'center', paddingVertical: 8, opacity: pressed ? 0.6 : 1 }
-              ]}
-            >
-              <Text style={{ color: C.bright, fontSize: 13, fontWeight: 'bold', textDecorationLine: 'underline' }}>
-                Entrar como invitado (dev)
-              </Text>
-            </Pressable>
+            <View style={{ marginTop: 16, flexDirection: 'row', justifyContent: 'center', gap: 20 }}>
+              <Pressable
+                onPress={() => handleQuickLogin({ email: 'invitado.a@arbu.dev', password: 'Invitado123!' })}
+                style={({ pressed }) => [{ paddingVertical: 8, opacity: pressed ? 0.6 : 1 }]}
+              >
+                <Text style={{ color: C.bright, fontSize: 13, fontWeight: 'bold', textDecorationLine: 'underline' }}>
+                  Invitado A (dev)
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => handleQuickLogin({ email: 'invitado.b@arbu.dev', password: 'Invitado123!' })}
+                style={({ pressed }) => [{ paddingVertical: 8, opacity: pressed ? 0.6 : 1 }]}
+              >
+                <Text style={{ color: C.bright, fontSize: 13, fontWeight: 'bold', textDecorationLine: 'underline' }}>
+                  Invitado B (dev)
+                </Text>
+              </Pressable>
+            </View>
           )}
 
           {/* Divider */}

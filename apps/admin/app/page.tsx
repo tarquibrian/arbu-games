@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { getAdminUser } from '@/lib/auth'
 import { createMerchant, createCoupon, toggleCoupon, addMerchantMember } from './actions'
 import { LogoutButton } from './LogoutButton'
+import { CouponPriceField } from './CouponPriceField'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +17,7 @@ export default async function AdminHome() {
   const admin = await getAdminUser()
   if (!admin) redirect('/login')
 
-  const [{ data: merchants }, { data: coupons }, { data: members }, usersRes] = await Promise.all([
+  const [{ data: merchants }, { data: coupons }, { data: members }, usersRes, { data: config }] = await Promise.all([
     supabaseAdmin.from('merchants').select('id,name,category,active').order('name'),
     supabaseAdmin
       .from('coupons')
@@ -24,7 +25,14 @@ export default async function AdminHome() {
       .order('created_at', { ascending: false }),
     supabaseAdmin.from('merchant_members').select('merchant_id,user_id'),
     supabaseAdmin.auth.admin.listUsers(),
+    supabaseAdmin.from('app_config').select('key,value').in('key', ['earn_rate', 'value_rate']),
   ])
+
+  // Referencia para traducir "precio en monedas" a algo humano (verificaciones / Bs).
+  // Ambos números viven en app_config — perillas ajustables, no hardcode.
+  const configByKey = new Map((config ?? []).map((c) => [c.key, c.value as Record<string, number>]))
+  const coinsPerValidation = configByKey.get('earn_rate')?.validate_tree ?? 30
+  const coinsPerBs = configByKey.get('value_rate')?.coins_per_bs ?? 10
 
   // auth.users no se expone por PostgREST → los correos salen por la Admin API.
   const emailById = new Map(usersRes.data.users.map((u) => [u.id, u.email ?? '']))
@@ -184,10 +192,12 @@ export default async function AdminHome() {
                 <label className={label}>Categoría</label>
                 <input name="category" className={field} placeholder="Cafeterías" />
               </div>
-              <div>
-                <label className={label}>Precio (monedas) *</label>
-                <input name="price_coins" type="number" min="1" required className={field} placeholder="150" />
-              </div>
+              <CouponPriceField
+                field={field}
+                label={label}
+                coinsPerValidation={coinsPerValidation}
+                coinsPerBs={coinsPerBs}
+              />
               <div>
                 <label className={label}>Tipo</label>
                 <select name="benefit_type" className={field} defaultValue="product">

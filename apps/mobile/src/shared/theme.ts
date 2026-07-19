@@ -9,12 +9,13 @@ export const T = {
   brightDeep: '#19c455',
   leaf: '#7fd6a0',
 
-  surfaceDim: 'rgba(255,255,255,0.018)',
-  surface: 'rgba(255,255,255,0.05)',
-  surfaceHi: 'rgba(255,255,255,0.09)',
-  well: 'rgba(48,224,106,0.12)',
-  hairline: 'rgba(120,230,150,0.14)',
-  hairline2: 'rgba(255,255,255,0.07)',
+  surfaceDim: 'rgba(255,255,255,0.055)',
+  surface: 'rgba(255,255,255,0.12)',
+  surfaceHi: 'rgba(255,255,255,0.17)',
+  well: 'rgba(48,224,106,0.16)',
+  // Hairlines toggled OFF (alpha 0) — see tailwind.config.js for the restore values.
+  hairline: 'rgba(120,230,150,0)',
+  hairline2: 'rgba(255,255,255,0)',
 
   text: '#eaf6ee',
   muted: 'rgba(205,225,212,0.62)',

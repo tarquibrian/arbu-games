@@ -19,7 +19,8 @@ export type MyStats = {
 
 // Factor de captura de CO2 provisional por árbol/año — placeholder hasta tener
 // modelo real (depende de especie/DAP, ver 13.4). Solo para el tile de impacto.
-const CO2_PER_TREE_KG = 21
+// Exportado: también lo usa el stat de impacto agregado en Explorar Árboles.
+export const CO2_PER_TREE_KG = 21
 
 // Puntos de la capa hábito (13.6): mapear y verificar suman progreso. Perilla simple,
 // no la recompensa en monedas (esa la fija el trigger 1+3).

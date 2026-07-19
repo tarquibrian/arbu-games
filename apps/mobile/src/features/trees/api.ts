@@ -89,34 +89,63 @@ export async function createTree(input: NewTreeInput): Promise<TreeRow> {
 export type PendingTree = Pick<
   TreeRow,
   'id' | 'latitude' | 'longitude' | 'photo_url' | 'dap' | 'health' | 'status' | 'validations_count' | 'species_name' | 'created_at'
->
+> & { validatedByMe: boolean; isMine: boolean }
 
-// Árboles que el usuario PUEDE verificar: pendientes/estancados, que no son suyos
-// y que aún no verificó (la constraint unique(tree_id,user_id) lo impediría igual).
+// Árboles pendientes/estancados cerca, incluidos los propios y los que el usuario ya
+// verificó — ambos se mantienen visibles en el mapa (marcados isMine / validatedByMe)
+// en vez de desaparecer, para que el usuario vea que su árbol quedó cargado y sigue
+// su progreso, y no pierda de vista lo que ya verificó (la constraint
+// unique(tree_id,user_id) y el trigger anti-autoverificación igual lo protegen
+// server-side; esto es solo para que la UI no confunda "no aparece" con "no se guardó").
 export async function listPendingTrees(): Promise<PendingTree[]> {
   const { data: { user }, error: authErr } = await supabase.auth.getUser()
   if (authErr || !user) throw new Error('No autenticado')
 
-  // Árboles que ya verifiqué (para excluirlos).
   const { data: mine } = await supabase
     .from('tree_validations')
     .select('tree_id')
     .eq('user_id', user.id)
-  const excluded = (mine ?? []).map((v) => v.tree_id)
+  const validatedByMe = new Set((mine ?? []).map((v) => v.tree_id))
 
-  let q = supabase
+  const { data, error } = await supabase
     .from('trees')
-    .select('id,latitude,longitude,photo_url,dap,health,status,validations_count,species_name,created_at')
+    .select('id,latitude,longitude,photo_url,dap,health,status,validations_count,species_name,created_at,user_id')
     .in('status', ['pending', 'stalled'])
-    .neq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(50)
 
-  if (excluded.length > 0) q = q.not('id', 'in', `(${excluded.join(',')})`)
-
-  const { data, error } = await q
   if (error) throw error
-  return (data ?? []) as PendingTree[]
+  return (data ?? []).map((t) => ({
+    ...t,
+    validatedByMe: validatedByMe.has(t.id),
+    isMine: t.user_id === user.id,
+  })) as PendingTree[]
+}
+
+// ============================================================
+// Explorar árboles — lectura pública, todos los estados (13.1)
+// ============================================================
+
+export type ExploreTree = Pick<
+  TreeRow,
+  | 'id' | 'latitude' | 'longitude' | 'photo_url' | 'dap' | 'health' | 'status'
+  | 'validations_count' | 'species_name' | 'origin' | 'planted_date' | 'created_at'
+>
+
+// Todos los árboles activos (pendientes, estancados y validados), sin excluir
+// propios — pantalla de sólo lectura para curiosear/investigar, no de acción.
+// No verificables/rechazados quedan fuera: son estado de auditoría (13.7), no
+// datos útiles para mostrar al público.
+export async function listAllTrees(): Promise<ExploreTree[]> {
+  const { data, error } = await supabase
+    .from('trees')
+    .select('id,latitude,longitude,photo_url,dap,health,status,validations_count,species_name,origin,planted_date,created_at')
+    .in('status', ['pending', 'stalled', 'validated'])
+    .order('created_at', { ascending: false })
+    .limit(200)
+
+  if (error) throw error
+  return (data ?? []) as ExploreTree[]
 }
 
 export type NewValidationInput = {

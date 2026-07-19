@@ -10,13 +10,17 @@ import {
   ActivityIndicator,
   ViewStyle,
   StyleProp,
+  StyleSheet,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { T, CTA_GRADIENT, glow, lift } from '@/shared/theme'
 
 // — Card: base translucent surface with a soft hairline.
 //   variant="dim" is the disabled/completed state: darker fill, no hairline,
-//   so live cards visibly pop against it (contrast by fill, not opacity). —
+//   so live cards visibly pop against it (contrast by fill, not opacity).
+//   Default variant fills with a diagonal light-to-dark gradient (top-left
+//   lighter, bottom-right darker) for a subtle "lit card" sheen — same idea
+//   as a premium card mockup, just a soft version of it. —
 export function Card({
   children,
   className = '',
@@ -28,12 +32,28 @@ export function Card({
   style?: StyleProp<ViewStyle>
   variant?: 'default' | 'dim'
 }) {
-  const surface =
-    variant === 'dim'
-      ? 'bg-surface-dim border border-transparent'
-      : 'bg-surface border border-hairline-2'
+  if (variant === 'dim') {
+    return (
+      <View
+        className={`bg-surface-dim border border-transparent rounded-3xl ${className}`}
+        style={style}
+      >
+        {children}
+      </View>
+    )
+  }
   return (
-    <View className={`${surface} rounded-3xl ${className}`} style={style}>
+    <View
+      className={`overflow-hidden border border-hairline-2 rounded-3xl ${className}`}
+      style={style}
+    >
+      <LinearGradient
+        colors={['rgba(255,255,255,0.10)', 'rgba(255,255,255,0.06)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
       {children}
     </View>
   )

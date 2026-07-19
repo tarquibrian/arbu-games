@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import { QRScanner } from './QRScanner'
 
 type Result = {
   code: string
@@ -77,11 +78,13 @@ function Login() {
 }
 
 function Validate() {
+  const [mode, setMode] = useState<'scan' | 'manual'>('scan')
   const [code, setCode] = useState('')
   const [result, setResult] = useState<Result | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [merchant, setMerchant] = useState<string>('')
+  const [scanKey, setScanKey] = useState(0)
 
   // Qué comercio soy (RLS: solo veo mi propia membresía).
   useEffect(() => {
@@ -96,16 +99,32 @@ function Validate() {
       })
   }, [])
 
-  const submit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault()
+  const validateCode = useCallback(async (raw: string) => {
     setError('')
     setResult(null)
     setLoading(true)
-    const { data, error: err } = await supabase.rpc('validate_redemption', { p_code: code.trim() })
+    const { data, error: err } = await supabase.rpc('validate_redemption', { p_code: raw.trim() })
     if (err) setError(err.message)
     else setResult((Array.isArray(data) ? data[0] : data) as Result)
     setLoading(false)
-  }, [code])
+  }, [])
+
+  const handleScan = useCallback((raw: string) => { setCode(raw); validateCode(raw) }, [validateCode])
+
+  const submitManual = (e: React.FormEvent) => { e.preventDefault(); validateCode(code) }
+
+  const scanAnother = () => {
+    setCode('')
+    setResult(null)
+    setError('')
+    setScanKey((k) => k + 1) // remonta el <QRScanner> → cámara arranca de nuevo
+  }
+
+  // !error es clave acá: sin esto, un código inválido/usado detectado por cámara
+  // deja el scanner armado apuntando al mismo QR físico → lo vuelve a leer → mismo
+  // error → loop. Tras un error, hay que tocar "Intentar de nuevo" (scanAnother)
+  // para rearmar la cámara a propósito.
+  const showScanner = mode === 'scan' && !result && !error && !loading
 
   return (
     <Shell>
@@ -113,26 +132,58 @@ function Validate() {
         <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-emerald-700">{merchant}</p>
       ) : null}
 
-      <form onSubmit={submit} className="space-y-4 rounded-xl border border-neutral-200 bg-white p-5">
-        <label className="block text-sm font-semibold text-neutral-800">Código del cliente</label>
-        <input
-          className={`${input} font-mono tracking-widest uppercase`}
-          placeholder="ARBU-XXXXXXXX"
-          value={code}
-          onChange={(e) => { setCode(e.target.value); setError(''); setResult(null) }}
-          autoCapitalize="characters"
-          required
-        />
-        <button className={btn} disabled={loading || !code.trim()}>
-          {loading ? 'Validando…' : 'Validar y entregar'}
-        </button>
-        <p className="text-xs text-neutral-400">El código es de un solo uso. Al validar, se marca como entregado.</p>
-      </form>
+      {showScanner ? (
+        <div className="space-y-3">
+          <QRScanner key={scanKey} onScan={handleScan} />
+          <p className="text-center text-xs text-neutral-400">Apuntá al QR que el cliente muestra en su app.</p>
+          <button
+            onClick={() => { setMode('manual'); setError(''); setResult(null) }}
+            className="w-full text-center text-sm font-semibold text-emerald-700 underline"
+          >
+            ¿Sin cámara? Ingresar código manualmente
+          </button>
+        </div>
+      ) : null}
+
+      {mode === 'manual' && !result ? (
+        <form onSubmit={submitManual} className="space-y-4 rounded-xl border border-neutral-200 bg-white p-5">
+          <label className="block text-sm font-semibold text-neutral-800">Código del cliente</label>
+          <input
+            className={`${input} font-mono tracking-widest uppercase`}
+            placeholder="ARBU-XXXXXXXX"
+            value={code}
+            onChange={(e) => { setCode(e.target.value); setError(''); setResult(null) }}
+            autoCapitalize="characters"
+            required
+          />
+          <button className={btn} disabled={loading || !code.trim()}>
+            {loading ? 'Validando…' : 'Validar y entregar'}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMode('scan'); setError(''); setCode('') }}
+            className="w-full text-center text-sm font-semibold text-emerald-700 underline"
+          >
+            Volver a escanear
+          </button>
+          <p className="text-xs text-neutral-400">El código es de un solo uso. Al validar, se marca como entregado.</p>
+        </form>
+      ) : null}
+
+      {loading && mode === 'scan' ? (
+        <p className="mt-4 text-center text-sm text-neutral-500">Validando…</p>
+      ) : null}
 
       {error ? (
         <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4">
           <p className="font-semibold text-red-700">No válido</p>
           <p className="text-sm text-red-600">{error}</p>
+          <button
+            onClick={scanAnother}
+            className="mt-4 w-full rounded-lg border border-red-600 px-4 py-2 text-sm font-semibold text-red-700"
+          >
+            Intentar de nuevo
+          </button>
         </div>
       ) : null}
 
@@ -143,7 +194,7 @@ function Validate() {
           <p className="text-sm text-neutral-600">{result.merchant_name}</p>
           <p className="mt-3 font-mono text-xs text-neutral-500">{result.code}</p>
           <button
-            onClick={() => { setCode(''); setResult(null) }}
+            onClick={scanAnother}
             className="mt-4 w-full rounded-lg border border-emerald-600 px-4 py-2 text-sm font-semibold text-emerald-700"
           >
             Validar otro

@@ -28,11 +28,12 @@ const LEADERBOARD_ALL_TIME = [
   { rank: 7, name: 'mariana_valle', trees: 50, points: 2500, active: false, initials: 'MV' },
 ]
 
-// Podium accents — metal tint per position, kept translucent to stay in-theme
+// Podium accents — metal tint per position, calibrated to read as solid metal
+// blocks on the flat-black tab background (not the old ambient-glow gradient).
 const PODIUM = {
-  1: { height: 148, ring: 'rgba(255,176,32,0.75)', tint: 'rgba(255,176,32,0.16)', label: T.gold },
-  2: { height: 108, ring: 'rgba(199,206,214,0.55)', tint: 'rgba(199,206,214,0.10)', label: T.silver },
-  3: { height: 88, ring: 'rgba(208,138,78,0.55)', tint: 'rgba(208,138,78,0.12)', label: T.bronze },
+  1: { height: 148, ring: 'rgba(255,176,32,0.85)', tint: 'rgba(255,176,32,0.30)', label: T.gold },
+  2: { height: 108, ring: 'rgba(199,206,214,0.70)', tint: 'rgba(199,206,214,0.22)', label: T.silver },
+  3: { height: 88, ring: 'rgba(208,138,78,0.70)', tint: 'rgba(208,138,78,0.24)', label: T.bronze },
 } as const
 
 export default function RankingScreen() {
@@ -48,7 +49,7 @@ export default function RankingScreen() {
 
   return (
     <View className="flex-1 bg-canvas">
-      <ScreenBackground />
+      <ScreenBackground variant="black" />
 
       <ScrollView
         contentContainerStyle={{
@@ -126,9 +127,10 @@ export default function RankingScreen() {
                 </Text>
                 <Text className="text-leaf text-[10px] font-bold mb-2.5">{user.points} pts</Text>
 
-                {/* Pillar — translucent gradient fading into the background */}
+                {/* Pillar — translucent gradient fading toward a still-visible base
+                    (surface-dim level) so the block reads as a pillar, not a fade to nothing */}
                 <LinearGradient
-                  colors={[p.tint, 'rgba(255,255,255,0.015)']}
+                  colors={[p.tint, 'rgba(255,255,255,0.055)']}
                   start={{ x: 0.5, y: 0 }}
                   end={{ x: 0.5, y: 1 }}
                   style={{

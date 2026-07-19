@@ -1,24 +1,30 @@
 import { useState } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, TextInput, Alert, Dimensions } from 'react-native'
 import { router } from 'expo-router'
+import { useQueryClient } from '@tanstack/react-query'
+import { goBack } from '@/shared/lib/navigation'
 import { ScreenBackground } from '@/shared/components/ui/ScreenBackground'
+import { ScreenHeader } from '@/shared/components/ui/ScreenHeader'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import MapView, { Marker } from 'react-native-maps'
-import { CameraIcon, MapPinIcon } from '@/shared/components/ui/Icons'
+import MapView from 'react-native-maps'
+import { CameraIcon, MapPinIcon, TargetIcon, LeafIcon } from '@/shared/components/ui/Icons'
+import { MapPin } from '@/shared/components/ui/MapPin'
 import { Image } from 'react-native'
-import * as ImagePicker from 'expo-image-picker'
 import { createTree, uploadTreePhoto } from '@/features/trees/api'
+import { requestTreePhotoPermission, launchTreePhotoCapture } from '@/features/trees/photoSource'
 
 const { width: W } = Dimensions.get('window')
 
 export default function NewTreeScreen() {
   const insets = useSafeAreaInsets()
+  const qc = useQueryClient()
   const [photo, setPhoto] = useState<string | null>(null)         // uri local (preview)
   const [photoBase64, setPhotoBase64] = useState<string | null>(null)
   const [dap, setDap] = useState('')
   const [health, setHealth] = useState<'Bueno' | 'Regular' | 'Pobre' | 'Muerto' | null>(null)
   const [step, setStep] = useState(1) // 1 = Map, 2 = Photo, 3 = Data
   const [submitting, setSubmitting] = useState(false)
+  const [showGuides, setShowGuides] = useState(false) // modo precisión: cruz de referencia en el centro
   const [region, setRegion] = useState({
     latitude: -17.37894,
     longitude: -66.15492,
@@ -35,17 +41,13 @@ export default function NewTreeScreen() {
   }
 
   const handleTakePhoto = async () => {
-    const perm = await ImagePicker.requestCameraPermissionsAsync()
+    const perm = await requestTreePhotoPermission()
     if (!perm.granted) {
       Alert.alert('Permiso requerido', 'Necesitamos acceso a la cámara para la foto en vivo del árbol.')
       return
     }
     try {
-      const result = await ImagePicker.launchCameraAsync({
-        base64: true,
-        quality: 0.6,
-        allowsEditing: false,
-      })
+      const result = await launchTreePhotoCapture()
       if (result.canceled || !result.assets?.[0]?.base64) return
       setPhoto(result.assets[0].uri)
       setPhotoBase64(result.assets[0].base64)
@@ -79,6 +81,9 @@ export default function NewTreeScreen() {
         health,
       })
 
+      qc.invalidateQueries({ queryKey: ['allTrees'] })
+      qc.invalidateQueries({ queryKey: ['pendingTrees'] })
+
       Alert.alert(
         'Registro Exitoso',
         '¡Tu árbol fue registrado! Ahora entra en estado de Validación (0/3). Ganarás ArbuCoins cuando sea verificado.',
@@ -91,32 +96,31 @@ export default function NewTreeScreen() {
     }
   }
 
+  const HEADER_COPY = {
+    1: { title: 'Paso 1: Mapear Ubicación', subtitle: 'Arrastra el mapa para ubicar el árbol con precisión' },
+    2: { title: 'Paso 2: Foto en Vivo', subtitle: 'Toma una fotografía del árbol completo. La carga desde galería está desactivada para prevenir fraudes.' },
+    3: { title: 'Paso 3: Detalles Finales', subtitle: 'Ingresa el diámetro del tronco y evalúa el estado de salud del árbol.' },
+  } as const
+
   return (
     <View className="flex-1 bg-[#08160e]">
       <ScreenBackground />
 
+      <ScreenHeader
+        title={HEADER_COPY[step as 1 | 2 | 3].title}
+        subtitle={HEADER_COPY[step as 1 | 2 | 3].subtitle}
+        onBack={step === 1 ? goBack : () => setStep((prev) => prev - 1)}
+      />
+
       {/* STEP 1: INTERACTIVE MAP FULL VIEW (Custom Layout) */}
       {step === 1 ? (
-        <View className="flex-1" style={{ paddingTop: insets.top }}>
-          {/* Header overlay */}
-          <View className="flex-row items-center px-5 py-4 bg-[#08160e]/90 border-b border-green-950/30 z-10">
-            <TouchableOpacity
-              onPress={() => router.back()}
-              className="mr-4 w-10 h-10 rounded-full bg-[#122e20] items-center justify-center border border-green-900"
-            >
-              <Text className="text-white text-base">←</Text>
-            </TouchableOpacity>
-            <View>
-              <Text className="text-white font-bold text-lg">Paso 1: Mapear Ubicación</Text>
-              <Text className="text-gray-400 text-xs mt-0.5">Arrastra el mapa para ubicar el árbol con precisión</Text>
-            </View>
-          </View>
-
+        <View className="flex-1">
           {/* Interactive Map */}
           <View className="flex-1 relative">
             <MapView
               style={{ flex: 1 }}
               initialRegion={region}
+              showsPointsOfInterests={false}
               onRegionChangeComplete={(reg) => {
                 setRegion(reg)
                 setMarkerCoords({
@@ -124,19 +128,42 @@ export default function NewTreeScreen() {
                   longitude: reg.longitude,
                 })
               }}
-            >
-              <Marker
-                coordinate={markerCoords}
-                title="Nuevo Árbol"
-                description="Suelta aquí para fijar posición"
-              />
-            </MapView>
+            />
 
-            {/* Crosshair indicator in the center */}
-            <View className="absolute top-1/2 left-1/2 -mt-10 -ml-5 items-center justify-center pointer-events-none">
-              <View className="bg-[#2fe06a] w-3 h-3 rounded-full border border-white mb-1 shadow-lg" />
-              <View className="h-6 w-0.5 bg-[#2fe06a]" />
-            </View>
+            {/* Pin y cruz son mutuamente excluyentes — el pin es grande y tapa justo el
+                punto que la cruz existe para dejar ver con precisión, así que mostrar
+                ambos a la vez estorba en vez de ayudar. */}
+            {showGuides ? (
+              <>
+                <View pointerEvents="none" className="absolute bg-black/60" style={{ top: '50%', left: 0, right: 0, height: 1 }} />
+                <View pointerEvents="none" className="absolute bg-black/60" style={{ left: '50%', top: 0, bottom: 0, width: 1 }} />
+              </>
+            ) : (
+              <View
+                pointerEvents="none"
+                className="absolute"
+                style={{ top: '50%', left: '50%', marginLeft: -20, marginTop: -38 }}
+              >
+                <MapPin size={40} color="#2fe06a">
+                  <LeafIcon size={14} color="#ffffff" />
+                </MapPin>
+              </View>
+            )}
+
+            {/* Toggle pin/cruz — el ícono muestra el modo ACTIVO (no el destino), a
+                juego con el color relleno/apagado. */}
+            <TouchableOpacity
+              onPress={() => setShowGuides((v) => !v)}
+              className={`absolute top-4 right-4 w-10 h-10 rounded-full items-center justify-center border shadow-lg ${
+                showGuides ? 'bg-[#2fe06a] border-white' : 'bg-[#0d2419]/90 border-green-900'
+              }`}
+            >
+              {showGuides ? (
+                <TargetIcon size={18} color="#04230f" />
+              ) : (
+                <MapPinIcon size={18} color="#2fe06a" />
+              )}
+            </TouchableOpacity>
           </View>
 
           {/* Bottom Card for Confirmation */}
@@ -165,23 +192,12 @@ export default function NewTreeScreen() {
       ) : (
         <ScrollView
           contentContainerStyle={{
-            paddingTop: insets.top + 16,
+            paddingTop: 16,
             paddingBottom: insets.bottom + 40,
             paddingHorizontal: 20,
           }}
           showsVerticalScrollIndicator={false}
         >
-          {/* Navigation Header */}
-          <View className="flex-row items-center mb-6">
-            <TouchableOpacity
-              onPress={() => setStep((prev) => prev - 1)}
-              className="mr-4 w-10 h-10 rounded-full bg-[#122e20] items-center justify-center border border-green-900"
-            >
-              <Text className="text-white text-base">←</Text>
-            </TouchableOpacity>
-            <Text className="text-xl font-bold text-white font-sans">Registrar Árbol</Text>
-          </View>
-
           {/* Steps Tracker */}
           <View className="flex-row gap-2 mb-8">
             <View className={`h-1.5 flex-1 rounded-full ${step >= 1 ? 'bg-[#2fe06a]' : 'bg-green-950'}`} />
@@ -192,11 +208,6 @@ export default function NewTreeScreen() {
           {/* STEP 2: CAMERA PHOTO */}
           {step === 2 && (
             <View className="bg-[#0d2419] border border-[#2fe06a]/15 rounded-3xl p-5 items-center">
-              <Text className="text-white font-bold text-base mb-2 text-center">Paso 2: Foto en Vivo</Text>
-              <Text className="text-gray-400 text-xs text-center mb-6 leading-5">
-                Toma una fotografía del árbol completo. La carga desde galería está desactivada para prevenir fraudes.
-              </Text>
-
               <TouchableOpacity
                 onPress={handleTakePhoto}
                 className="bg-[#122e20] border-2 border-dashed border-[#2fe06a]/30 w-full h-56 rounded-2xl items-center justify-center my-4 overflow-hidden"
@@ -223,11 +234,6 @@ export default function NewTreeScreen() {
           {/* STEP 3: HEALTH STATUS & DAP */}
           {step === 3 && (
             <View className="bg-[#0d2419] border border-[#2fe06a]/15 rounded-3xl p-5">
-              <Text className="text-white font-bold text-base mb-2 text-center">Paso 3: Detalles Finales</Text>
-              <Text className="text-gray-400 text-xs text-center mb-6 leading-5">
-                Ingresa el diámetro del tronco y evalúa el estado de salud del árbol.
-              </Text>
-
               {/* DAP Input */}
               <View className="mb-5">
                 <Text className="text-white text-xs font-bold mb-2">Diámetro de Tronco (DAP en cm)</Text>

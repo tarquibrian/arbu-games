@@ -1,6 +1,8 @@
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
+import { goBack } from '@/shared/lib/navigation'
 import { ScreenBackground } from '@/shared/components/ui/ScreenBackground'
+import { ScreenHeader } from '@/shared/components/ui/ScreenHeader'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LeafIcon } from '@/shared/components/ui/Icons'
 
@@ -25,22 +27,16 @@ export default function TreeDetailScreen() {
     <View className="flex-1 bg-[#08160e]">
       <ScreenBackground />
 
+      <ScreenHeader title="Detalle del Árbol" subtitle={tree.species} onBack={goBack} />
+
       <ScrollView
         contentContainerStyle={{
-          paddingTop: insets.top + 16,
+          paddingTop: 16,
           paddingBottom: insets.bottom + 40,
           paddingHorizontal: 20,
         }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Navigation Header */}
-        <View className="flex-row items-center mb-6">
-          <TouchableOpacity onPress={() => router.back()} className="mr-4 w-10 h-10 rounded-full bg-[#122e20] items-center justify-center border border-green-900">
-            <Text className="text-white text-base">←</Text>
-          </TouchableOpacity>
-          <Text className="text-xl font-bold text-white font-sans">Detalle del Árbol</Text>
-        </View>
-
         {/* Tree Icon & Title Card */}
         <View className="bg-[#0d2419] border border-[#2fe06a]/20 rounded-3xl p-6 items-center mb-6 shadow-sm">
           <View className="bg-[#122e20] w-20 h-20 rounded-full items-center justify-center mb-4 border border-green-900">
@@ -90,7 +86,7 @@ export default function TreeDetailScreen() {
 
         <TouchableOpacity
           className="bg-transparent border border-green-950 rounded-xl py-3.5 items-center"
-          onPress={() => router.back()}
+          onPress={goBack}
         >
           <Text className="text-gray-300 text-sm">Volver</Text>
         </TouchableOpacity>

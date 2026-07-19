@@ -221,6 +221,27 @@ export const MapPinIcon = ({ size = 24, color = '#2fe06a' }: IconProps) => (
   </Svg>
 )
 
+// Mismo contorno que MapPinIcon pero relleno sólido (sin el hueco central) —
+// para el pin de "acá va el árbol" en el mapa de registro.
+export const SolidPinIcon = ({ size = 24, color = '#2fe06a', strokeColor = '#ffffff' }: IconProps & { strokeColor?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path
+      d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"
+      fill={color}
+      stroke={strokeColor}
+      strokeWidth={1.2}
+      strokeLinejoin="round"
+    />
+  </Svg>
+)
+
+export const TargetIcon = ({ size = 24, color = '#2fe06a' }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx={12} cy={12} r={7} stroke={color} strokeWidth={2} />
+    <Path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+)
+
 export const CloseIcon = ({ size = 24, color = '#eaf6ee' }: IconProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M18 6L6 18M6 6l12 12" stroke={color} strokeWidth={2} strokeLinecap="round" />

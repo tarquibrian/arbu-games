@@ -34,13 +34,16 @@ app/
     register.tsx
   (tabs)/
     _layout.tsx        # guards: redirects to /(auth)/login if no session
-    index.tsx          # Mapa
-    explore.tsx        # Verificar
-    wallet.tsx         # Billetera
+    index.tsx          # Inicio (home, stats, quick actions)
+    plus.tsx            # "+" tab — action-sheet modal (Mapear/Verificar/Explorar)
     profile.tsx        # Perfil
+    ranking.tsx        # Ranking
+    rewards.tsx        # Premios (Billetera Verde: catálogo + canje de cupones)
   tree/
-    new.tsx            # register a new tree
+    new.tsx            # register a new tree (3 steps: ubicación, foto, datos)
     [id].tsx           # tree detail
+    verify.tsx         # 1+3 community verification map
+    explore.tsx        # read-only map of all trees + aggregate stats
 ```
 
 ### State Management
