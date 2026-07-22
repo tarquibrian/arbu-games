@@ -89,6 +89,19 @@ En la pantalla de login de `apps/mobile` hay dos botones dev-only ("Invitado A" 
 
 **Para qué existen:** varios flujos del producto necesitan **dos o más usuarios distintos** para probarse de punta a punta — la validación comunitaria "1+3" (alguien mapea, otros verifican) y el canje de cupón con QR (uno reclama en el celular, otro valida desde `apps/merchant`). Sin esto, probar esos flujos requeriría crear cuentas nuevas o usar sesiones anónimas que se descartan y pierden el estado. Con Invitado A/B podés alternar entre dos identidades persistentes con un tap, cada una con sus propios árboles/monedas/cupones, y repetir la prueba las veces que haga falta.
 
+## GPS en desarrollo
+
+Registrar y verificar usan la ubicación real del dispositivo, y el servidor **rechaza** una verificación sin coordenadas o a más de `verify_radius_m` (30 m por defecto) del árbol — el chequeo vive en el trigger `handle_new_validation()`, no en el cliente.
+
+En simulador esto normalmente no molesta: si mapeás y verificás desde la misma ubicación simulada, la distancia es ~0. Se rompe cuando el árbol está en Cochabamba y el simulador en otro lado (iOS arranca en Cupertino).
+
+- **iOS Simulator:** `Features → Location → Custom Location…` → `-17.37894 / -66.15492`.
+- **Android emulator:** `⋯ → Location` → misma coordenada → `Set Location`.
+- **Atajo (sólo local):** ampliar el radio en vez de mover el device.
+  ```sql
+  update app_config set value = '100000' where key = 'verify_radius_m';
+  ```
+
 ## Comandos rápidos por app
 
 ```bash

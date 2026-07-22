@@ -34,6 +34,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          created_at: string
+          email: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_config: {
         Row: {
           description: string | null
@@ -167,6 +185,32 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "coupons_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merchant_members: {
+        Row: {
+          created_at: string
+          merchant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          merchant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          merchant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_members_merchant_id_fkey"
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
@@ -311,39 +355,73 @@ export type Database = {
       }
       tree_validations: {
         Row: {
+          circumference_cm: number | null
+          conflicts: Database["public"]["Enums"]["tree_conflict"][] | null
           created_at: string
+          gps_accuracy: number | null
           health: Database["public"]["Enums"]["tree_health"]
+          height_band: Database["public"]["Enums"]["tree_height_band"] | null
           id: string
           latitude: number | null
           longitude: number | null
           notes: string | null
+          photo_trunk_url: string | null
           photo_url: string
+          site_context: Database["public"]["Enums"]["tree_site_context"] | null
+          species_id: string | null
+          species_name: string | null
           tree_id: string
+          urgency: Database["public"]["Enums"]["tree_urgency"] | null
           user_id: string
         }
         Insert: {
+          circumference_cm?: number | null
+          conflicts?: Database["public"]["Enums"]["tree_conflict"][] | null
           created_at?: string
+          gps_accuracy?: number | null
           health: Database["public"]["Enums"]["tree_health"]
+          height_band?: Database["public"]["Enums"]["tree_height_band"] | null
           id?: string
           latitude?: number | null
           longitude?: number | null
           notes?: string | null
+          photo_trunk_url?: string | null
           photo_url: string
+          site_context?: Database["public"]["Enums"]["tree_site_context"] | null
+          species_id?: string | null
+          species_name?: string | null
           tree_id: string
+          urgency?: Database["public"]["Enums"]["tree_urgency"] | null
           user_id: string
         }
         Update: {
+          circumference_cm?: number | null
+          conflicts?: Database["public"]["Enums"]["tree_conflict"][] | null
           created_at?: string
+          gps_accuracy?: number | null
           health?: Database["public"]["Enums"]["tree_health"]
+          height_band?: Database["public"]["Enums"]["tree_height_band"] | null
           id?: string
           latitude?: number | null
           longitude?: number | null
           notes?: string | null
+          photo_trunk_url?: string | null
           photo_url?: string
+          site_context?: Database["public"]["Enums"]["tree_site_context"] | null
+          species_id?: string | null
+          species_name?: string | null
           tree_id?: string
+          urgency?: Database["public"]["Enums"]["tree_urgency"] | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tree_validations_species_id_fkey"
+            columns: ["species_id"]
+            isOneToOne: false
+            referencedRelation: "species"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tree_validations_tree_id_fkey"
             columns: ["tree_id"]
@@ -363,10 +441,14 @@ export type Database = {
       trees: {
         Row: {
           audit_reason: string | null
+          circumference_cm: number | null
+          conflicts: Database["public"]["Enums"]["tree_conflict"][]
           created_at: string
           dap: number
+          disputed_fields: string[]
           gps_accuracy: number | null
           health: Database["public"]["Enums"]["tree_health"]
+          height_band: Database["public"]["Enums"]["tree_height_band"] | null
           id: string
           latitude: number
           lifecycle_stage:
@@ -375,23 +457,30 @@ export type Database = {
           longitude: number
           notes: string | null
           origin: Database["public"]["Enums"]["tree_origin"]
+          photo_trunk_url: string | null
           photo_url: string
           planted_date: string | null
+          site_context: Database["public"]["Enums"]["tree_site_context"] | null
           source: Database["public"]["Enums"]["tree_source"]
           species_id: string | null
           species_name: string | null
           status: Database["public"]["Enums"]["tree_status"]
           under_audit: boolean
           updated_at: string
+          urgency: Database["public"]["Enums"]["tree_urgency"]
           user_id: string
           validations_count: number
         }
         Insert: {
           audit_reason?: string | null
+          circumference_cm?: number | null
+          conflicts?: Database["public"]["Enums"]["tree_conflict"][]
           created_at?: string
           dap: number
+          disputed_fields?: string[]
           gps_accuracy?: number | null
           health: Database["public"]["Enums"]["tree_health"]
+          height_band?: Database["public"]["Enums"]["tree_height_band"] | null
           id?: string
           latitude: number
           lifecycle_stage?:
@@ -400,23 +489,30 @@ export type Database = {
           longitude: number
           notes?: string | null
           origin?: Database["public"]["Enums"]["tree_origin"]
+          photo_trunk_url?: string | null
           photo_url: string
           planted_date?: string | null
+          site_context?: Database["public"]["Enums"]["tree_site_context"] | null
           source?: Database["public"]["Enums"]["tree_source"]
           species_id?: string | null
           species_name?: string | null
           status?: Database["public"]["Enums"]["tree_status"]
           under_audit?: boolean
           updated_at?: string
+          urgency?: Database["public"]["Enums"]["tree_urgency"]
           user_id: string
           validations_count?: number
         }
         Update: {
           audit_reason?: string | null
+          circumference_cm?: number | null
+          conflicts?: Database["public"]["Enums"]["tree_conflict"][]
           created_at?: string
           dap?: number
+          disputed_fields?: string[]
           gps_accuracy?: number | null
           health?: Database["public"]["Enums"]["tree_health"]
+          height_band?: Database["public"]["Enums"]["tree_height_band"] | null
           id?: string
           latitude?: number
           lifecycle_stage?:
@@ -425,14 +521,17 @@ export type Database = {
           longitude?: number
           notes?: string | null
           origin?: Database["public"]["Enums"]["tree_origin"]
+          photo_trunk_url?: string | null
           photo_url?: string
           planted_date?: string | null
+          site_context?: Database["public"]["Enums"]["tree_site_context"] | null
           source?: Database["public"]["Enums"]["tree_source"]
           species_id?: string | null
           species_name?: string | null
           status?: Database["public"]["Enums"]["tree_status"]
           under_audit?: boolean
           updated_at?: string
+          urgency?: Database["public"]["Enums"]["tree_urgency"]
           user_id?: string
           validations_count?: number
         }
@@ -513,6 +612,60 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_validation_consensus: {
+        Args: { p_tree_id: string }
+        Returns: undefined
+      }
+      distance_m: {
+        Args: { lat1: number; lat2: number; lng1: number; lng2: number }
+        Returns: number
+      }
+      is_merchant_member: { Args: { p_merchant_id: string }; Returns: boolean }
+      leaderboard: {
+        Args: { p_limit?: number; p_period?: string }
+        Returns: {
+          place: number
+          points: number
+          trees_mapped: number
+          user_id: string
+          username: string
+          validations_done: number
+        }[]
+      }
+      leaderboard_me: {
+        Args: { p_period?: string }
+        Returns: {
+          place: number
+          points: number
+          total_ranked: number
+          trees_mapped: number
+          username: string
+          validations_done: number
+        }[]
+      }
+      majority_text: {
+        Args: { p_vals: string[] }
+        Returns: {
+          disputed: boolean
+          winner: string
+        }[]
+      }
+      nearby_trees: {
+        Args: { p_lat: number; p_lng: number; p_radius_m?: number }
+        Returns: {
+          created_at: string
+          dap: number
+          distance_meters: number
+          health: Database["public"]["Enums"]["tree_health"]
+          id: string
+          latitude: number
+          longitude: number
+          photo_url: string
+          species_name: string
+          status: Database["public"]["Enums"]["tree_status"]
+          validations_count: number
+        }[]
+      }
       redeem_coupon: {
         Args: { p_coupon_id: string }
         Returns: {
@@ -534,16 +687,41 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      validate_redemption: {
+        Args: { p_code: string }
+        Returns: {
+          code: string
+          coins_spent: number
+          coupon_title: string
+          merchant_name: string
+          redemption_id: string
+          used_at: string
+        }[]
+      }
     }
     Enums: {
       benefit_type: "product" | "discount" | "service" | "ticket"
       coupon_tier: "short" | "medium" | "long"
       redemption_location: "app" | "on_site"
       redemption_status: "claimed" | "used" | "expired"
+      tree_conflict:
+        | "overhead_cables"
+        | "sidewalk_damage"
+        | "pole_or_light"
+        | "small_pit"
+        | "against_wall"
       tree_health: "good" | "regular" | "poor" | "dead"
+      tree_height_band: "lt3" | "b3_6" | "b6_12" | "gt12"
       tree_lifecycle_stage: "seedling" | "young" | "mature"
       tree_origin: "planted" | "existing"
       tree_report_reason: "suspicious" | "damaged" | "dead" | "other"
+      tree_site_context:
+        | "sidewalk"
+        | "median"
+        | "plaza_park"
+        | "riverside"
+        | "private_yard"
+        | "other"
       tree_source: "arbu_games" | "arbu_migration"
       tree_status:
         | "pending"
@@ -551,6 +729,13 @@ export type Database = {
         | "validated"
         | "unverifiable"
         | "rejected"
+      tree_urgency:
+        | "none"
+        | "dry_dead"
+        | "burned"
+        | "pest"
+        | "mechanical_damage"
+        | "being_felled"
       wallet_txn_type: "earn" | "redeem"
     }
     CompositeTypes: {
@@ -686,10 +871,26 @@ export const Constants = {
       coupon_tier: ["short", "medium", "long"],
       redemption_location: ["app", "on_site"],
       redemption_status: ["claimed", "used", "expired"],
+      tree_conflict: [
+        "overhead_cables",
+        "sidewalk_damage",
+        "pole_or_light",
+        "small_pit",
+        "against_wall",
+      ],
       tree_health: ["good", "regular", "poor", "dead"],
+      tree_height_band: ["lt3", "b3_6", "b6_12", "gt12"],
       tree_lifecycle_stage: ["seedling", "young", "mature"],
       tree_origin: ["planted", "existing"],
       tree_report_reason: ["suspicious", "damaged", "dead", "other"],
+      tree_site_context: [
+        "sidewalk",
+        "median",
+        "plaza_park",
+        "riverside",
+        "private_yard",
+        "other",
+      ],
       tree_source: ["arbu_games", "arbu_migration"],
       tree_status: [
         "pending",
@@ -698,8 +899,15 @@ export const Constants = {
         "unverifiable",
         "rejected",
       ],
+      tree_urgency: [
+        "none",
+        "dry_dead",
+        "burned",
+        "pest",
+        "mechanical_damage",
+        "being_felled",
+      ],
       wallet_txn_type: ["earn", "redeem"],
     },
   },
 } as const
-

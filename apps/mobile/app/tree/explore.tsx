@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { View, Text, TouchableOpacity, Image } from 'react-native'
+import { router } from 'expo-router'
 import { goBack } from '@/shared/lib/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { ScreenBackground } from '@/shared/components/ui/ScreenBackground'
@@ -11,15 +12,10 @@ import { LeafIcon } from '@/shared/components/ui/Icons'
 import { MapPin } from '@/shared/components/ui/MapPin'
 import { StatTile } from '@/shared/components/ui/StatTile'
 import { CO2_PER_TREE_KG } from '@/features/profile/api'
+import { appConfigQuery, DEFAULT_CONFIG } from '@/features/config/api'
+import { HEALTH, healthLabel } from '@/features/trees/vocab'
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000
-
-const HEALTH_ES: Record<string, { label: string; dot: string }> = {
-  good: { label: 'Bueno', dot: 'bg-green-500' },
-  regular: { label: 'Regular', dot: 'bg-yellow-500' },
-  poor: { label: 'Pobre', dot: 'bg-orange-500' },
-  dead: { label: 'Muerto', dot: 'bg-red-500' },
-}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('es-BO', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -31,6 +27,7 @@ export default function ExploreTreesScreen() {
 
   const treesQ = useQuery({ queryKey: ['allTrees'], queryFn: listAllTrees })
   const trees = treesQ.data ?? []
+  const cfg = useQuery(appConfigQuery).data ?? DEFAULT_CONFIG
 
   // Stats agregados de la población mostrada — sin esto la pantalla es solo un mapa
   // vacío hasta que tocás un marker; acá se ve de un vistazo qué tan activa/diversa
@@ -131,8 +128,8 @@ export default function ExploreTreesScreen() {
                 <View className="flex-row justify-between mb-2">
                   <Text className="text-gray-400 text-xs">Salud:</Text>
                   <View className="flex-row items-center">
-                    <View className={`w-2.5 h-2.5 rounded-full mr-1.5 ${HEALTH_ES[selected.health]?.dot ?? 'bg-gray-500'}`} />
-                    <Text className="text-white text-xs font-bold">{HEALTH_ES[selected.health]?.label ?? selected.health}</Text>
+                    <View className={`w-2.5 h-2.5 rounded-full mr-1.5 ${HEALTH.find((h) => h.value === selected.health)?.dot ?? 'bg-gray-500'}`} />
+                    <Text className="text-white text-xs font-bold">{healthLabel(selected.health) ?? selected.health}</Text>
                   </View>
                 </View>
                 <View className="flex-row justify-between mb-2">
@@ -148,11 +145,22 @@ export default function ExploreTreesScreen() {
                   {selected.status === 'validated' ? (
                     <Text className="text-gray-400 text-[11px]">Validado ✓</Text>
                   ) : (
-                    <Text className="text-gray-400 text-[11px]">{selected.validations_count}/3 verificaciones</Text>
+                    <Text className="text-gray-400 text-[11px]">
+                      {selected.validations_count}/{cfg.validationThreshold} verificaciones
+                    </Text>
                   )}
                 </View>
               </View>
             </View>
+
+            {/* El resumen alcanza para curiosear; la ficha completa (medidas,
+                conflictos, quién validó qué) vive en su propia pantalla. */}
+            <TouchableOpacity
+              onPress={() => router.push(`/tree/${selected.id}`)}
+              className="bg-[#122e20] border border-[#2fe06a]/25 rounded-xl py-3 items-center mt-4"
+            >
+              <Text className="text-[#2fe06a] text-xs font-bold">Ver ficha completa</Text>
+            </TouchableOpacity>
 
             <Text className="text-gray-500 text-[11px] text-center mt-3">
               Registrado el {formatDate(selected.created_at)}
