@@ -8,13 +8,18 @@ export type MyStats = {
   createdAt: string
   coins: number
   mapped: number
-  validated: number
+  /** Verificaciones que HIZO el usuario (filas propias en tree_validations). */
+  verifications: number
+  /** Árboles propios que llegaron a validarse (contador de profiles). */
+  myTreesValidated: number
   redemptions: number
   co2Kg: number
   points: number
   level: number
   levelFloor: number
   nextLevelAt: number
+  /** Puesto histórico; null si todavía no sumó puntos. */
+  place: number | null
 }
 
 // Factor de captura de CO2 provisional por árbol/año — placeholder hasta tener
@@ -22,32 +27,38 @@ export type MyStats = {
 // Exportado: también lo usa el stat de impacto agregado en Explorar Árboles.
 export const CO2_PER_TREE_KG = 21
 
-// Puntos de la capa hábito (13.6): mapear y verificar suman progreso. Perilla simple,
-// no la recompensa en monedas (esa la fija el trigger 1+3).
-const P_MAP = 10
-const P_VERIFY = 15
 const LEVEL_SIZE = 100 // puntos por nivel
 
 export async function getMyStats(): Promise<MyStats> {
   const { data: { user }, error: authErr } = await supabase.auth.getUser()
   if (authErr || !user) throw new Error('No autenticado')
 
-  const [{ data: profile, error: pErr }, { count: redemptions }] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('username,created_at,coins,total_trees_mapped,total_trees_validated')
-      .eq('id', user.id)
-      .single(),
-    supabase
-      .from('coupon_redemptions')
-      .select('id', { count: 'exact', head: true }),
-  ])
+  // Los puntos NO se recalculan acá: salen del mismo RPC que arma el ranking
+  // (perilla app_config.points_rate). Duplicar la fórmula en el cliente es cómo
+  // el perfil y la tabla de posiciones terminan mostrando números distintos.
+  const [{ data: profile, error: pErr }, { count: redemptions }, { data: pos, error: posErr }] =
+    await Promise.all([
+      supabase
+        .from('profiles')
+        .select('username,created_at,coins,total_trees_mapped,total_trees_validated')
+        .eq('id', user.id)
+        .single(),
+      supabase
+        .from('coupon_redemptions')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id),
+      supabase.rpc('leaderboard_me', { p_period: 'all' }),
+    ])
   if (pErr) throw pErr
-  const p = profile as Pick<ProfileRow, 'username' | 'created_at' | 'coins' | 'total_trees_mapped' | 'total_trees_validated'>
+  if (posErr) throw posErr
 
-  const mapped = p.total_trees_mapped
-  const validated = p.total_trees_validated
-  const points = mapped * P_MAP + validated * P_VERIFY
+  const p = profile as Pick<ProfileRow, 'username' | 'created_at' | 'coins' | 'total_trees_mapped' | 'total_trees_validated'>
+  const me = (Array.isArray(pos) ? pos[0] : pos) as
+    | { trees_mapped: number; validations_done: number; points: number; place: number | null }
+    | undefined
+
+  const mapped = me?.trees_mapped ?? p.total_trees_mapped
+  const points = me?.points ?? 0
   const level = Math.floor(points / LEVEL_SIZE) + 1
 
   return {
@@ -55,12 +66,14 @@ export async function getMyStats(): Promise<MyStats> {
     createdAt: p.created_at,
     coins: p.coins,
     mapped,
-    validated,
+    verifications: me?.validations_done ?? 0,
+    myTreesValidated: p.total_trees_validated,
     redemptions: redemptions ?? 0,
     co2Kg: mapped * CO2_PER_TREE_KG,
     points,
     level,
     levelFloor: (level - 1) * LEVEL_SIZE,
     nextLevelAt: level * LEVEL_SIZE,
+    place: me?.place ?? null,
   }
 }

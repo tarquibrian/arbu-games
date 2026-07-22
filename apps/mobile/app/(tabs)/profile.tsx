@@ -18,14 +18,15 @@ import {
   ChevronRightIcon,
 } from '@/shared/components/ui/Icons'
 
-// Insignias derivadas de contadores reales (sin schema nuevo). Las de racha/ranking
-// quedan bloqueadas hasta construir esas capas (13.6 Fase 2).
+// Insignias derivadas de contadores reales (sin schema nuevo). La de racha sigue
+// bloqueada hasta construir esa capa (13.6 Fase 2); la de top 3 ya usa el puesto
+// histórico real del ranking.
 function buildBadges(s: MyStats) {
   return [
     { id: 'b1', name: 'Primer Brote', desc: 'Mapea tu 1er árbol', Icon: LeafIcon, unlocked: s.mapped >= 1 },
-    { id: 'b2', name: 'Inspector Verde', desc: 'Realiza 10 verificaciones', Icon: SearchIcon, unlocked: s.validated >= 10 },
+    { id: 'b2', name: 'Inspector Verde', desc: 'Realiza 10 verificaciones', Icon: SearchIcon, unlocked: s.verifications >= 10 },
     { id: 'b3', name: 'Guardián Activo', desc: 'Mantén una racha de 7 días', Icon: BoltIcon, unlocked: false },
-    { id: 'b4', name: 'Eco Héroe', desc: 'Llega al top 3 semanal', Icon: TrophyIcon, unlocked: false },
+    { id: 'b4', name: 'Eco Héroe', desc: 'Entra al top 3 histórico', Icon: TrophyIcon, unlocked: s.place != null && s.place <= 3 },
     { id: 'b5', name: 'Silvicultor', desc: 'Mapea 50 árboles', Icon: LeafIcon, unlocked: s.mapped >= 50 },
     { id: 'b6', name: 'Oro Verde', desc: 'Canjea 5 recompensas', Icon: TicketIcon, unlocked: s.redemptions >= 5 },
   ]
@@ -47,9 +48,11 @@ export default function ProfileScreen() {
   const joined = s ? `Miembro desde ${MONTHS[new Date(s.createdAt).getMonth()]} ${new Date(s.createdAt).getFullYear()}` : ''
   const badges = s ? buildBadges(s) : []
 
+  // "Verificaciones" son las que HIZO el usuario. Antes se mostraba
+  // total_trees_validated, que es otra cosa: árboles propios que se validaron.
   const stats = [
     { label: 'Mapeados', value: `${s?.mapped ?? 0}`, Icon: LeafIcon },
-    { label: 'Verificados', value: `${s?.validated ?? 0}`, Icon: SearchIcon },
+    { label: 'Verificaciones', value: `${s?.verifications ?? 0}`, Icon: SearchIcon },
     { label: 'CO2 estim.', value: `${s?.co2Kg ?? 0} kg`, Icon: CO2Icon },
   ]
 
@@ -80,7 +83,9 @@ export default function ProfileScreen() {
             @{s?.username ?? '…'}
           </Text>
           {s ? (
-            <Text className="text-leaf text-xs font-bold mt-1">Nivel {s.level} · {s.points} pts</Text>
+            <Text className="text-leaf text-xs font-bold mt-1">
+              Nivel {s.level} · {s.points} pts{s.place ? ` · #${s.place} histórico` : ''}
+            </Text>
           ) : null}
           {joined ? (
             <View className="bg-surface border border-hairline-2 rounded-full px-3.5 py-1.5 mt-3">
