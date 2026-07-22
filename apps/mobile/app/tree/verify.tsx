@@ -166,6 +166,7 @@ export default function VerifyTreeScreen() {
       qc.invalidateQueries({ queryKey: ['myStats'] })
       qc.invalidateQueries({ queryKey: ['leaderboard'] })
       qc.invalidateQueries({ queryKey: ['leaderboardMe'] })
+      qc.invalidateQueries({ queryKey: ['dailyMissions'] })
     },
     onError: (e: any) => {
       Alert.alert('No se pudo verificar', e?.message ?? 'Intenta de nuevo.')

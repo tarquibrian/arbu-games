@@ -6,34 +6,15 @@ import { ScreenBackground } from '@/shared/components/ui/ScreenBackground'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { T } from '@/shared/theme'
 import { Card, HeroCard, PrimaryButton, Chip, SectionTitle, IconWell } from '@/shared/components/ui/Kit'
-import {
-  WalletIcon,
-  CoffeeIcon,
-  BikeIcon,
-  CactusIcon,
-  FilmIcon,
-  CheckIcon,
-  LeafIcon,
-} from '@/shared/components/ui/Icons'
+import { WalletIcon, CheckIcon } from '@/shared/components/ui/Icons'
 import { CouponCodeCard } from '@/features/coupons/CouponCodeCard'
+import { iconForCategory } from '@/features/coupons/categoryIcon'
 import {
   listCoupons,
   getMyBalance,
   redeemCoupon,
   type CouponWithMerchant,
 } from '@/features/coupons/api'
-
-// Ícono por categoría del comercio (los cupones no traen ícono propio).
-function iconForCategory(cat: string | null) {
-  switch (cat) {
-    case 'Cafetería':
-    case 'Cafeterías': return CoffeeIcon
-    case 'Deportes': return BikeIcon
-    case 'Plantas': return CactusIcon
-    case 'Entretenimiento': return FilmIcon
-    default: return LeafIcon
-  }
-}
 
 type SuccessInfo = { title: string; store: string; code: string; onSite: boolean }
 

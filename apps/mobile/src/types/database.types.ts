@@ -257,6 +257,84 @@ export type Database = {
         }
         Relationships: []
       }
+      mission_claims: {
+        Row: {
+          claim_day: string
+          coins: number
+          created_at: string
+          id: string
+          mission_id: string
+          user_id: string
+        }
+        Insert: {
+          claim_day: string
+          coins: number
+          created_at?: string
+          id?: string
+          mission_id: string
+          user_id: string
+        }
+        Update: {
+          claim_day?: string
+          coins?: number
+          created_at?: string
+          id?: string
+          mission_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mission_claims_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_claims_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      missions: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          description: string
+          id: string
+          kind: Database["public"]["Enums"]["mission_kind"]
+          reward_coins: number
+          target: number
+          title: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          description: string
+          id?: string
+          kind: Database["public"]["Enums"]["mission_kind"]
+          reward_coins: number
+          target: number
+          title: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["mission_kind"]
+          reward_coins?: number
+          target?: number
+          title?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -616,6 +694,28 @@ export type Database = {
         Args: { p_tree_id: string }
         Returns: undefined
       }
+      claim_mission: {
+        Args: { p_mission_id: string }
+        Returns: {
+          coins_awarded: number
+          new_balance: number
+        }[]
+      }
+      daily_missions: {
+        Args: never
+        Returns: {
+          claimed: boolean
+          code: string
+          completed: boolean
+          description: string
+          kind: Database["public"]["Enums"]["mission_kind"]
+          mission_id: string
+          progress: number
+          reward_coins: number
+          target: number
+          title: string
+        }[]
+      }
       distance_m: {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
         Returns: number
@@ -687,6 +787,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      today_start_bo: { Args: never; Returns: string }
       validate_redemption: {
         Args: { p_code: string }
         Returns: {
@@ -702,6 +803,11 @@ export type Database = {
     Enums: {
       benefit_type: "product" | "discount" | "service" | "ticket"
       coupon_tier: "short" | "medium" | "long"
+      mission_kind:
+        | "map_trees"
+        | "map_with_species"
+        | "verify_trees"
+        | "close_validation"
       redemption_location: "app" | "on_site"
       redemption_status: "claimed" | "used" | "expired"
       tree_conflict:
@@ -869,6 +975,12 @@ export const Constants = {
     Enums: {
       benefit_type: ["product", "discount", "service", "ticket"],
       coupon_tier: ["short", "medium", "long"],
+      mission_kind: [
+        "map_trees",
+        "map_with_species",
+        "verify_trees",
+        "close_validation",
+      ],
       redemption_location: ["app", "on_site"],
       redemption_status: ["claimed", "used", "expired"],
       tree_conflict: [
