@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { ScreenBackground } from '@/shared/components/ui/ScreenBackground'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { getMyStats, type MyStats } from '@/features/profile/api'
+import { getMyStreak, streakLabel } from '@/features/streaks/api'
 import { T, glow } from '@/shared/theme'
 import { Card, SectionTitle, IconWell } from '@/shared/components/ui/Kit'
 import {
@@ -15,17 +16,17 @@ import {
   TrophyIcon,
   TicketIcon,
   LockIcon,
+  FlameIcon,
   ChevronRightIcon,
 } from '@/shared/components/ui/Icons'
 
-// Insignias derivadas de contadores reales (sin schema nuevo). La de racha sigue
-// bloqueada hasta construir esa capa (13.6 Fase 2); la de top 3 ya usa el puesto
-// histórico real del ranking.
-function buildBadges(s: MyStats) {
+// Insignias derivadas de contadores reales (sin schema nuevo). La de racha usa el
+// mejor histórico de my_streak() (0010); la de top 3, el puesto histórico real.
+function buildBadges(s: MyStats, bestStreak: number) {
   return [
     { id: 'b1', name: 'Primer Brote', desc: 'Mapea tu 1er árbol', Icon: LeafIcon, unlocked: s.mapped >= 1 },
     { id: 'b2', name: 'Inspector Verde', desc: 'Realiza 10 verificaciones', Icon: SearchIcon, unlocked: s.verifications >= 10 },
-    { id: 'b3', name: 'Guardián Activo', desc: 'Mantén una racha de 7 días', Icon: BoltIcon, unlocked: false },
+    { id: 'b3', name: 'Guardián Activo', desc: 'Mantén una racha de 7 días', Icon: BoltIcon, unlocked: bestStreak >= 7 },
     { id: 'b4', name: 'Eco Héroe', desc: 'Entra al top 3 histórico', Icon: TrophyIcon, unlocked: s.place != null && s.place <= 3 },
     { id: 'b5', name: 'Silvicultor', desc: 'Mapea 50 árboles', Icon: LeafIcon, unlocked: s.mapped >= 50 },
     { id: 'b6', name: 'Oro Verde', desc: 'Canjea 5 recompensas', Icon: TicketIcon, unlocked: s.redemptions >= 5 },
@@ -39,6 +40,8 @@ const SETTINGS_ROWS = ['Editar Perfil', 'Historial de Transacciones', 'Términos
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets()
   const statsQ = useQuery({ queryKey: ['myStats'], queryFn: getMyStats })
+  const streakQ = useQuery({ queryKey: ['streak'], queryFn: getMyStreak })
+  const streak = streakQ.data
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -46,7 +49,7 @@ export default function ProfileScreen() {
 
   const s = statsQ.data
   const joined = s ? `Miembro desde ${MONTHS[new Date(s.createdAt).getMonth()]} ${new Date(s.createdAt).getFullYear()}` : ''
-  const badges = s ? buildBadges(s) : []
+  const badges = s ? buildBadges(s, streak?.best ?? 0) : []
 
   // "Verificaciones" son las que HIZO el usuario. Antes se mostraba
   // total_trees_validated, que es otra cosa: árboles propios que se validaron.
@@ -97,6 +100,23 @@ export default function ProfileScreen() {
         </View>
 
         {/* Stats */}
+        {/* Racha — misma fuente que el home (0010). Full-width para no romper la
+            grilla de 3, y porque el hábito merece jerarquía propia. */}
+        {streak && streak.current > 0 ? (
+          <Card className="flex-row items-center p-4 rounded-2xl mb-3">
+            <IconWell size={44} className="mr-3.5">
+              <FlameIcon size={22} color="#ff8a3d" />
+            </IconWell>
+            <View className="flex-1">
+              <Text className="text-body font-extrabold text-base">{streakLabel(streak)}</Text>
+              <Text className="text-muted text-xs mt-0.5">
+                {streak.activeToday ? 'Ya sumaste hoy' : 'Mapea o verifica hoy para mantenerla'}
+                {streak.best > streak.current ? ` · Mejor: ${streak.best}` : ''}
+              </Text>
+            </View>
+          </Card>
+        ) : null}
+
         {statsQ.isLoading ? (
           <View className="items-center py-8 mb-8"><ActivityIndicator color={T.bright} /></View>
         ) : (

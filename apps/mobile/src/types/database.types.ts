@@ -750,6 +750,14 @@ export type Database = {
           winner: string
         }[]
       }
+      my_streak: {
+        Args: never
+        Returns: {
+          current_streak: number
+          best_streak: number
+          active_today: boolean
+        }[]
+      }
       nearby_trees: {
         Args: { p_lat: number; p_lng: number; p_radius_m?: number }
         Returns: {

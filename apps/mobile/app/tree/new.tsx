@@ -168,6 +168,7 @@ export default function NewTreeScreen() {
       qc.invalidateQueries({ queryKey: ['leaderboard'] })
       qc.invalidateQueries({ queryKey: ['leaderboardMe'] })
       qc.invalidateQueries({ queryKey: ['dailyMissions'] })
+      qc.invalidateQueries({ queryKey: ['streak'] })
 
       Alert.alert(
         'Registro Exitoso',

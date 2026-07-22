@@ -18,9 +18,11 @@ import {
   LeafIcon,
   SearchIcon,
   CheckIcon,
+  FlameIcon,
 } from '@/shared/components/ui/Icons'
 import { listCoupons } from '@/features/coupons/api'
 import { iconForCategory } from '@/features/coupons/categoryIcon'
+import { getMyStreak, streakLabel } from '@/features/streaks/api'
 
 // Ícono por tipo de misión — mapear y verificar son acciones distintas y el
 // usuario tiene que poder distinguirlas sin leer.
@@ -37,6 +39,8 @@ export default function HomeScreen() {
   const qc = useQueryClient()
   const statsQ = useQuery({ queryKey: ['myStats'], queryFn: getMyStats })
   const missionsQ = useQuery({ queryKey: ['dailyMissions'], queryFn: listDailyMissions })
+  const streakQ = useQuery({ queryKey: ['streak'], queryFn: getMyStreak })
+  const streak = streakQ.data
   const s = statsQ.data
   const rank = 'Guardián del Valle'
   const inLevel = s ? s.points - s.levelFloor : 0
@@ -132,6 +136,22 @@ export default function HomeScreen() {
               {levelSpan - inLevel} pts para Nivel {(s?.level ?? 1) + 1}
             </Text>
           </View>
+
+          {/* Racha — computada por el servidor (0010). Naranja viva cuando corre,
+              apagada cuando está rota, para que el estado se lea sin texto. */}
+          {streak ? (
+            <View className="flex-row items-center mt-4 pt-4 border-t border-hairline-2">
+              <FlameIcon size={18} color={streak.current > 0 ? '#ff8a3d' : T.faint} />
+              <Text
+                className={`text-xs font-bold ml-2 ${streak.current > 0 ? 'text-body' : 'text-faint'}`}
+              >
+                {streakLabel(streak)}
+              </Text>
+              {streak.best > 1 ? (
+                <Text className="text-faint text-[11px] ml-auto">Mejor: {streak.best}</Text>
+              ) : null}
+            </View>
+          ) : null}
         </HeroCard>
 
         {/* Quick actions */}

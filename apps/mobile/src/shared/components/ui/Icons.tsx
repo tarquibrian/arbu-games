@@ -137,6 +137,18 @@ export const BoltIcon = ({ size = 24, color = '#2fe06a' }: IconProps) => (
   </Svg>
 )
 
+export const FlameIcon = ({ size = 24, color = '#ff8a3d' }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M12 2c1 3 4 4.5 4 8a4 4 0 0 1-8 0c0-1 .3-1.8.7-2.5C6 8.5 5 10.5 5 13a7 7 0 0 0 14 0c0-4.5-3.5-7-7-11z"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+)
+
 export const LockIcon = ({ size = 24, color = '#9ca3af' }: IconProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Rect x={3} y={11} width={18} height={11} rx={2} stroke={color} strokeWidth={2} />
