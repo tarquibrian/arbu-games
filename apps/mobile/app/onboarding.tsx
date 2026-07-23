@@ -135,6 +135,16 @@ export default function OnboardingScreen() {
         showsHorizontalScrollIndicator={false}
         scrollEnabled
         keyExtractor={s => s.key}
+        // Cada slide mide exactamente W (ancho de ventana). Sin getItemLayout,
+        // scrollToIndex tiene que medir en runtime y en react-native-web no
+        // resuelve el offset: el índice avanzaba pero la lista no scrolleaba.
+        // Con la geometría explícita el salto es determinista en native y web.
+        getItemLayout={(_, i) => ({ length: W, offset: W * i, index: i })}
+        // Red de seguridad: si el índice destino aún no está medido, scrollToIndex
+        // lanza en native. Se cae a scrollToOffset, que no depende de la medición.
+        onScrollToIndexFailed={({ index: i }) => {
+          listRef.current?.scrollToOffset({ offset: W * i, animated: true })
+        }}
         scrollEventThrottle={80}
         onScroll={e => {
           // Skip during programmatic scroll — offset still reflects old position
