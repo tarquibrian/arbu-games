@@ -21,24 +21,27 @@ const C = {
   bg: '#08160e',
 }
 
+// Las 3 slides cuentan el loop real del producto, en orden: mapear -> validar
+// en comunidad -> canjear. No es "planta un árbol": los árboles ya existen y el
+// usuario los registra y cuida. El copy evita esa confusión a propósito.
 const SLIDES = [
   {
     key: 'one',
     Scene: SceneOne,
-    title: 'Plant your first tree',
-    body: 'Start small. Every habit you build grows into something rooted and real.',
+    title: 'Mapea el arbolado de tu ciudad',
+    body: 'Registra los árboles de tu barrio con una foto y su ubicación. Cada uno suma al mapa vivo de Cochabamba.',
   },
   {
     key: 'two',
     Scene: SceneTwo,
-    title: 'Watch your forest grow',
-    body: 'Each day you show up, your forest gets a little fuller and a little greener.',
+    title: 'Validado por la comunidad',
+    body: 'Otros tres vecinos verifican cada árbol en el lugar. Así los datos son reales y confiables, no de una sola persona.',
   },
   {
     key: 'three',
     Scene: SceneThree,
-    title: 'Track every step',
-    body: 'See your streaks, your progress and your whole journey unfold over time.',
+    title: 'Gana ArbuCoins y canjéalas',
+    body: 'Mapear y verificar te da ArbuCoins que cambias por beneficios reales en comercios locales.',
   },
 ]
 
@@ -119,7 +122,7 @@ export default function OnboardingScreen() {
       {/* Skip */}
       <View style={[s.skipRow, { paddingTop: insets.top + 12 }]}>
         <Pressable onPress={finish} style={{ opacity: last ? 0 : 1 }} hitSlop={16}>
-          <Text style={s.skipText}>Skip</Text>
+          <Text style={s.skipText}>Saltar</Text>
         </Pressable>
       </View>
 
@@ -172,7 +175,7 @@ export default function OnboardingScreen() {
             start={{ x: 0.5, y: 0 }}
             end={{ x: 0.5, y: 1 }}
           >
-            <Text style={s.btnText}>{last ? 'Get Started' : 'Next'}</Text>
+            <Text style={s.btnText}>{last ? 'Empezar' : 'Siguiente'}</Text>
             <ArrowRight />
           </LinearGradient>
         </Pressable>
