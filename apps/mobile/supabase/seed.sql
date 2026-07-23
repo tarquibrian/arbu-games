@@ -1,16 +1,8 @@
 -- Seed de desarrollo — se aplica con `supabase db reset`.
--- Catálogo mínimo de especies urbanas de Cochabamba + comercios/cupones de prueba.
-
-insert into species (common_name, scientific_name, default_remonitoring_days) values
-  ('Jacarandá',        'Jacaranda mimosifolia',   180),
-  ('Molle',            'Schinus molle',           180),
-  ('Eucalipto',        'Eucalyptus globulus',     365),
-  ('Ceibo',            'Erythrina crista-galli',  180),
-  ('Álamo',            'Populus alba',            180),
-  ('Sauce llorón',     'Salix babylonica',        180),
-  ('Pino',             'Pinus radiata',           365),
-  ('Palmera',          null,                      365),
-  ('Desconocido',      null,                      null);
+-- SÓLO comercios/cupones de prueba. El catálogo de especies se movió a la
+-- migración 0011 (es dato de referencia que producción también necesita, y
+-- `db push` no corre este archivo). En prod los comercios se crean desde el
+-- admin; acá van sólo para el loop local de canje.
 
 -- ============================================================
 -- Comercios + cupones de prueba (MVP piloto Cochabamba: canje on_site).
