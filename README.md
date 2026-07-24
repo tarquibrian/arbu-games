@@ -32,7 +32,7 @@ El backend es un proyecto Supabase local (Postgres + Auth + Storage vía Docker)
    cd apps/mobile
    npx supabase start
    ```
-   El primer arranque corre las migraciones y el seed automáticamente (especies, 5 comercios, 5 cupones de ejemplo). El seed **no crea usuarios** — ni admin ni comercio, eso es un paso aparte (más abajo).
+   El primer arranque corre las migraciones y el seed automáticamente. Las migraciones traen lo que producción también necesita (catálogo de especies y de misiones diarias); el seed agrega sólo datos de prueba: 5 comercios y 5 cupones de ejemplo. El seed **no crea usuarios** — ni admin ni comercio, eso es un paso aparte (más abajo).
 
 3. **Sacar las credenciales locales:**
    ```bash

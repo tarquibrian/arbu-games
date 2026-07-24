@@ -49,7 +49,9 @@ export default function ProfileScreen() {
 
   const s = statsQ.data
   const joined = s ? `Miembro desde ${MONTHS[new Date(s.createdAt).getMonth()]} ${new Date(s.createdAt).getFullYear()}` : ''
-  const badges = s ? buildBadges(s, streak?.best ?? 0) : []
+  // Se espera también a la racha: con `best ?? 0` la insignia "Guardián Activo"
+  // aparecía bloqueada y saltaba a desbloqueada al resolver el segundo query.
+  const badges = s && streak ? buildBadges(s, streak.best) : []
 
   // "Verificaciones" son las que HIZO el usuario. Antes se mostraba
   // total_trees_validated, que es otra cosa: árboles propios que se validaron.

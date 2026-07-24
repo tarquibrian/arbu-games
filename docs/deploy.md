@@ -134,8 +134,17 @@ sudo certbot --nginx -d admin.arbu.games -d comercio.arbu.games   # 🔑
 `eas.json` ya está en `apps/mobile/` con tres perfiles:
 - **development** — dev client (Metro en vivo), corre en simulador.
 - **preview** — APK / build interno para instalar en teléfonos de testers. **Este
-  es el del piloto.** Al salir de Expo Go habilita push notifications.
+  es el del piloto.**
 - **production** — build de tienda (auto-incrementa versión).
+
+> **Sobre push notifications.** Salir de Expo Go es condición *necesaria* pero no
+> suficiente: `expo-notifications` todavía **no está instalado** en el proyecto y
+> `app.json` no tiene config de push. El build de preview no manda notificaciones
+> por sí solo — eso es trabajo aparte.
+>
+> **Sobre OTA updates.** `eas.json` no define `channel` a propósito: los channels
+> son de EAS Update y `expo-updates` no está instalado. Si más adelante querés
+> updates OTA, instalá `expo-updates` primero y recién ahí agregá los channels.
 
 ### 3.1 Preparar 🔑
 Desde `apps/mobile/`:

@@ -6,7 +6,7 @@ export type Species = Pick<
   'id' | 'common_name' | 'scientific_name'
 >
 
-// Catálogo de especies locales (sembrado, compartido con Arbu — 5.2).
+// Catálogo de especies locales (migración 0011, compartido con Arbu — 5.2).
 // Cambia poco: se cachea toda la sesión como app_config.
 export async function listSpecies(): Promise<Species[]> {
   const { data, error } = await supabase
@@ -23,7 +23,7 @@ export const speciesQuery = {
   staleTime: Infinity,
 }
 
-// "Desconocido" existe en el catálogo (seed) y es una respuesta válida: forzar
+// "Desconocido" existe en el catálogo (0011) y es una respuesta válida: forzar
 // una especie inventada es peor dato que admitir que no se sabe (13.1).
 export const isUnknownSpecies = (s: Pick<Species, 'common_name'>) =>
   s.common_name.toLowerCase() === 'desconocido'
