@@ -102,12 +102,20 @@ export type PendingTree = Pick<
   | 'id' | 'latitude' | 'longitude' | 'photo_url' | 'photo_trunk_url' | 'dap' | 'circumference_cm'
   | 'health' | 'status' | 'validations_count' | 'species_id' | 'species_name' | 'height_band'
   | 'site_context' | 'conflicts' | 'urgency' | 'created_at'
-> & { validatedByMe: boolean; isMine: boolean }
+> & {
+  validatedByMe: boolean
+  isMine: boolean
+  /** Computado por el servidor: pendiente hace más de `stalled_after_days` sin completar el 1+3. */
+  is_stalled: boolean
+}
 
 // Literal (no concatenado): supabase-js infiere el tipo de la fila desde el
 // string exacto del select, y una concatenación lo degrada a `string`.
+// `is_stalled` es una columna COMPUTADA en el servidor (0012), no una columna
+// real: se calcula de (status, created_at, validations_count) contra la perilla
+// stalled_after_days. Se pide acá para no replicar esa fórmula en el cliente.
 const PENDING_TREE_COLUMNS =
-  'id,latitude,longitude,photo_url,photo_trunk_url,dap,circumference_cm,health,status,validations_count,species_id,species_name,height_band,site_context,conflicts,urgency,created_at,user_id' as const
+  'id,latitude,longitude,photo_url,photo_trunk_url,dap,circumference_cm,health,status,validations_count,species_id,species_name,height_band,site_context,conflicts,urgency,created_at,user_id,is_stalled' as const
 
 // Árboles pendientes/estancados cerca, incluidos los propios y los que el usuario ya
 // verificó — ambos se mantienen visibles en el mapa (marcados isMine / validatedByMe)
@@ -324,5 +332,31 @@ export async function createValidation(
     treeStatus: tree?.status ?? 'pending',
     validationsCount: tree?.validations_count ?? 0,
     disputedFields: tree?.disputed_fields ?? [],
+  }
+}
+
+// ============================================================
+// "Fui y no está" — camino al estado terminal (13.2)
+// ============================================================
+
+/**
+ * Reporta que el árbol no se encontró en el lugar. Cuando `not_found_threshold`
+ * personas distintas lo reportan, el servidor lo archiva como `unverifiable`.
+ * No borra nada: un registro que nadie encuentra es señal de fraude, y esa
+ * señal es dato.
+ */
+export async function reportTreeNotFound(
+  treeId: string,
+  notes?: string,
+): Promise<{ reports: number; markedUnverifiable: boolean }> {
+  const { data, error } = await supabase.rpc('report_tree_not_found', {
+    p_tree_id: treeId,
+    p_notes: notes ?? undefined,
+  })
+  if (error) throw error
+  const row = Array.isArray(data) ? data[0] : data
+  return {
+    reports: row?.reports ?? 0,
+    markedUnverifiable: row?.marked_unverifiable ?? false,
   }
 }

@@ -9,6 +9,8 @@ export type AppConfig = {
   verifyRadiusM: number       // distancia máxima para verificar en el lugar
   duplicateRadiusM: number    // radio de búsqueda de duplicados al registrar
   gpsAccuracyMaxM: number     // precisión GPS por encima de la cual se advierte
+  stalledBonusRate: number    // multiplicador de recompensa al rescatar un estancado (13.2)
+  stalledAfterDays: number    // días pendiente sin completar el 1+3 para considerarse estancado
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
@@ -18,6 +20,8 @@ export const DEFAULT_CONFIG: AppConfig = {
   verifyRadiusM: 30,
   duplicateRadiusM: 25,
   gpsAccuracyMaxM: 15,
+  stalledBonusRate: 1.5,
+  stalledAfterDays: 14,
 }
 
 const num = (v: unknown, fallback: number) =>
@@ -38,8 +42,14 @@ export async function getAppConfig(): Promise<AppConfig> {
     verifyRadiusM: num(map.get('verify_radius_m'), DEFAULT_CONFIG.verifyRadiusM),
     duplicateRadiusM: num(map.get('duplicate_radius_m'), DEFAULT_CONFIG.duplicateRadiusM),
     gpsAccuracyMaxM: num(map.get('gps_accuracy_max_m'), DEFAULT_CONFIG.gpsAccuracyMaxM),
+    stalledBonusRate: num(map.get('stalled_bonus_rate'), DEFAULT_CONFIG.stalledBonusRate),
+    stalledAfterDays: num(map.get('stalled_after_days'), DEFAULT_CONFIG.stalledAfterDays),
   }
 }
+
+/** Recompensa por verificar, con el bono de rescate si el árbol está estancado (13.2). */
+export const verifyReward = (cfg: AppConfig, isStalled: boolean) =>
+  isStalled ? Math.round(cfg.validateReward * cfg.stalledBonusRate) : cfg.validateReward
 
 // Config cambia poco: cachearla toda la sesión evita un round-trip por pantalla.
 export const appConfigQuery = {

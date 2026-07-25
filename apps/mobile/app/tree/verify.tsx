@@ -14,11 +14,12 @@ import {
   listPendingTrees,
   createValidation,
   uploadTreePhoto,
+  reportTreeNotFound,
   type PendingTree,
 } from '@/features/trees/api'
 import { requestTreePhotoPermission, launchTreePhotoCapture } from '@/features/trees/photoSource'
 import { getFix, distanceMeters, formatDistance, type Fix } from '@/shared/lib/location'
-import { appConfigQuery, DEFAULT_CONFIG } from '@/features/config/api'
+import { appConfigQuery, DEFAULT_CONFIG, verifyReward } from '@/features/config/api'
 import { speciesQuery } from '@/features/species/api'
 import { HEALTH, HEIGHT_BANDS, SITE_CONTEXTS, CONFLICTS, URGENCIES } from '@/features/trees/vocab'
 import {
@@ -117,6 +118,34 @@ export default function VerifyTreeScreen() {
     setCanopy(null); setTrunk(null); setCircumference(''); setHealth(null)
     setSpeciesId(null); setSpeciesName(null); setHeightBand(null)
     setSiteContext(null); setConflicts([]); setUrgency(null)
+  }
+
+  // Reportar "fui y no está". El servidor archiva el árbol recién cuando varias
+  // personas distintas coinciden — un reporte solo no decide nada.
+  const notFoundM = useMutation({
+    mutationFn: () => reportTreeNotFound(selected!.id),
+    onSuccess: ({ reports, markedUnverifiable }) => {
+      qc.invalidateQueries({ queryKey: ['pendingTrees'] })
+      setSelected(null)
+      Alert.alert(
+        markedUnverifiable ? 'Árbol archivado' : 'Reporte enviado',
+        markedUnverifiable
+          ? 'Varias personas no lo encontraron, así que dejó de aparecer en la cola de verificación.'
+          : `Gracias. Van ${reports} ${reports === 1 ? 'persona' : 'personas'} que no lo encuentran; con más reportes deja de aparecer.`,
+      )
+    },
+    onError: (e: any) => Alert.alert('No se pudo enviar', e?.message ?? 'Intentá de nuevo.'),
+  })
+
+  const confirmNotFound = () => {
+    Alert.alert(
+      '¿No encontrás el árbol?',
+      'Confirmá sólo si estás en el lugar y no hay ningún árbol que coincida. Se archiva cuando varias personas coinciden.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'No está', style: 'destructive', onPress: () => notFoundM.mutate() },
+      ],
+    )
   }
 
   const verifyM = useMutation({
@@ -292,6 +321,16 @@ export default function VerifyTreeScreen() {
                     {selected.validations_count}/{cfg.validationThreshold} verificaciones
                   </Text>
                 </View>
+                {/* Estancado: el registro lleva semanas esperando. El bono es lo que
+                    lo saca del olvido, así que se muestra donde se decide (13.2). */}
+                {selected.is_stalled ? (
+                  <View className="flex-row justify-between mb-2">
+                    <Text className="text-amber-400/80 text-xs">Estancado:</Text>
+                    <Text className="text-amber-400 text-xs font-bold">
+                      +{verifyReward(cfg, true)} AC por rescate
+                    </Text>
+                  </View>
+                ) : null}
                 <View className="flex-row justify-between">
                   <Text className="text-gray-400 text-xs">Distancia:</Text>
                   {locating ? (
@@ -345,8 +384,20 @@ export default function VerifyTreeScreen() {
                   <Text className="text-[#04230f] font-extrabold text-sm">Verificar este árbol</Text>
                 </TouchableOpacity>
                 <Text className="text-gray-500 text-[11px] text-center mt-2">
-                  Vas a medirlo y evaluarlo vos: ganás {cfg.validateReward} AC cuando llegue a {cfg.validationThreshold} verificaciones.
+                  Vas a medirlo y evaluarlo vos: ganás {verifyReward(cfg, selected.is_stalled)} AC cuando llegue a {cfg.validationThreshold} verificaciones.
                 </Text>
+
+                {/* "Fui y no está" — la única vía al estado terminal. Sin esto un
+                    registro falso se queda pendiente para siempre ocupando la cola. */}
+                <TouchableOpacity
+                  onPress={confirmNotFound}
+                  disabled={notFoundM.isPending}
+                  className="mt-3 py-2.5 items-center"
+                >
+                  <Text className="text-gray-500 text-xs underline">
+                    {notFoundM.isPending ? 'Enviando…' : 'No encuentro este árbol acá'}
+                  </Text>
+                </TouchableOpacity>
               </>
             )}
           </View>

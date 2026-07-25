@@ -528,6 +528,12 @@ export type Database = {
           health: Database["public"]["Enums"]["tree_health"]
           height_band: Database["public"]["Enums"]["tree_height_band"] | null
           id: string
+          /**
+           * Columna COMPUTADA (función `is_stalled(trees)` en 0012), no almacenada:
+           * se deriva de status/created_at/validations_count contra la perilla
+           * `stalled_after_days`. Va sólo en Row — no se inserta ni se actualiza.
+           */
+          is_stalled: boolean
           latitude: number
           lifecycle_stage:
             | Database["public"]["Enums"]["tree_lifecycle_stage"]
@@ -756,6 +762,29 @@ export type Database = {
           current_streak: number
           best_streak: number
           active_today: boolean
+        }[]
+      }
+      report_tree_not_found: {
+        Args: { p_tree_id: string; p_notes?: string }
+        Returns: {
+          reports: number
+          marked_unverifiable: boolean
+        }[]
+      }
+      verification_queue: {
+        Args: { p_lat?: number; p_lng?: number; p_limit?: number }
+        Returns: {
+          id: string
+          latitude: number
+          longitude: number
+          photo_url: string
+          species_name: string | null
+          validations_count: number
+          created_at: string
+          is_stalled: boolean
+          days_waiting: number
+          reward_coins: number
+          distance_meters: number | null
         }[]
       }
       nearby_trees: {
