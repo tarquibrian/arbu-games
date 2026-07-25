@@ -540,6 +540,42 @@ export type Database = {
     }
     Functions: {
       is_merchant_member: { Args: { p_merchant_id: string }; Returns: boolean }
+      /** Panel de actividad del comercio (migración 0013). Acotadas por merchant_members. */
+      merchant_activity: {
+        Args: never
+        Returns: {
+          coupons_active: number
+          claimed_total: number
+          used_total: number
+          pending_use: number
+          coins_total: number
+          used_last_7d: number
+          used_last_30d: number
+        }[]
+      }
+      merchant_coupon_stats: {
+        Args: never
+        Returns: {
+          coupon_id: string
+          title: string
+          price_coins: number
+          active: boolean
+          quota_remaining: number | null
+          claimed: number
+          used: number
+        }[]
+      }
+      merchant_recent_redemptions: {
+        Args: { p_limit?: number }
+        Returns: {
+          redemption_code: string
+          coupon_title: string
+          status: Database["public"]["Enums"]["redemption_status"]
+          claimed_at: string
+          used_at: string | null
+          coins_spent: number
+        }[]
+      }
       redeem_coupon: {
         Args: { p_coupon_id: string }
         Returns: {

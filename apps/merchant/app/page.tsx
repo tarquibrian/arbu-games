@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { QRScanner } from './QRScanner'
+import { Activity } from './Activity'
 
 type Result = {
   code: string
@@ -78,6 +79,7 @@ function Login() {
 }
 
 function Validate() {
+  const [tab, setTab] = useState<'validar' | 'actividad'>('validar')
   const [mode, setMode] = useState<'scan' | 'manual'>('scan')
   const [code, setCode] = useState('')
   const [result, setResult] = useState<Result | null>(null)
@@ -132,7 +134,25 @@ function Validate() {
         <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-emerald-700">{merchant}</p>
       ) : null}
 
-      {showScanner ? (
+      {/* El comercio necesita las dos cosas: validar el código que tiene enfrente,
+          y saber si participar le está sirviendo (Hipótesis 3). */}
+      <div className="mb-5 flex gap-1 rounded-lg bg-neutral-100 p-1">
+        {(['validar', 'actividad'] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`flex-1 rounded-md px-3 py-2 text-sm font-semibold capitalize ${
+              tab === t ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500'
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'actividad' ? <Activity /> : null}
+
+      {tab === 'validar' && showScanner ? (
         <div className="space-y-3">
           <QRScanner key={scanKey} onScan={handleScan} />
           <p className="text-center text-xs text-neutral-400">Apuntá al QR que el cliente muestra en su app.</p>
@@ -145,7 +165,7 @@ function Validate() {
         </div>
       ) : null}
 
-      {mode === 'manual' && !result ? (
+      {tab === 'validar' && mode === 'manual' && !result ? (
         <form onSubmit={submitManual} className="space-y-4 rounded-xl border border-neutral-200 bg-white p-5">
           <label className="block text-sm font-semibold text-neutral-800">Código del cliente</label>
           <input
@@ -170,11 +190,11 @@ function Validate() {
         </form>
       ) : null}
 
-      {loading && mode === 'scan' ? (
+      {tab === 'validar' && loading && mode === 'scan' ? (
         <p className="mt-4 text-center text-sm text-neutral-500">Validando…</p>
       ) : null}
 
-      {error ? (
+      {tab === 'validar' && error ? (
         <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4">
           <p className="font-semibold text-red-700">No válido</p>
           <p className="text-sm text-red-600">{error}</p>
@@ -187,7 +207,7 @@ function Validate() {
         </div>
       ) : null}
 
-      {result ? (
+      {tab === 'validar' && result ? (
         <div className="mt-4 rounded-xl border border-emerald-300 bg-emerald-50 p-5">
           <p className="text-lg font-bold text-emerald-800">✓ Válido — entregar</p>
           <p className="mt-2 text-xl font-bold text-neutral-900">{result.coupon_title}</p>
