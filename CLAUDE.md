@@ -48,7 +48,14 @@ npm run android    # start + open Android emulator
 npm run web        # web target
 ```
 
-There is no test runner or linter configured. Type-check with `npx tsc --noEmit` from `apps/mobile/`.
+No hay test runner de JS/RN ni linter configurado. Lo que sí hay:
+
+```bash
+npm run typecheck   # tsc --noEmit
+npm run test:db     # pgTAP sobre la lógica server-side (necesita supabase local corriendo)
+```
+
+`npm run test:db` corre `apps/mobile/supabase/tests/*.test.sql` con pgTAP. Cubre la lógica donde un bug cuesta plata: el loop 1+3 y su pago (`validation_payout`), el anti doble-pago de misiones (`missions`), la regla "hoy o ayer" de las rachas (`streaks`) y los puntos/puestos del ranking (`leaderboard`). Cada archivo corre en una transacción que se revierte, así que no ensucia la base local. **Si tocás un trigger o un RPC de esos, corré esto antes de commitear.**
 
 ## Mobile app — architecture (big picture)
 
