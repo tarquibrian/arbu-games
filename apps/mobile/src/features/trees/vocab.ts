@@ -13,6 +13,15 @@ export const HEALTH: { value: E['tree_health']; label: string; hint: string; dot
   { value: 'dead',    label: 'Muerto',  hint: 'Sin follaje vivo',                 dot: 'bg-red-500' },
 ]
 
+// Origen: cómo entró el árbol a los datos. Es INMUTABLE — dato histórico y de
+// provenance (13.1.1). El doc pide capturarlo desde el MVP aunque la lógica
+// pesada del plantado (fase de supervivencia, recompensa diferenciada) sea
+// Fase 2: si no se pregunta ahora, la fecha de nacimiento se pierde para siempre.
+export const ORIGINS: { value: E['tree_origin']; label: string; hint: string }[] = [
+  { value: 'existing', label: 'Ya estaba',    hint: 'Lo encontraste ahí; su edad es estimada' },
+  { value: 'planted',  label: 'Lo plantamos', hint: 'Presenciaste la plantación; se conoce la fecha exacta' },
+]
+
 export const HEIGHT_BANDS: { value: E['tree_height_band']; label: string; hint: string }[] = [
   { value: 'lt3',   label: 'Menos de 3 m', hint: 'No supera un poste de luz bajo' },
   { value: 'b3_6',  label: '3 a 6 m',      hint: 'Entre 1 y 2 pisos' },

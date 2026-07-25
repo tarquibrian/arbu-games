@@ -14,7 +14,7 @@ import { requestTreePhotoPermission, launchTreePhotoCapture } from '@/features/t
 import { getFix, distanceMeters, formatDistance, type Fix } from '@/shared/lib/location'
 import { appConfigQuery, DEFAULT_CONFIG } from '@/features/config/api'
 import { speciesQuery } from '@/features/species/api'
-import { HEALTH, HEIGHT_BANDS, SITE_CONTEXTS, CONFLICTS, URGENCIES } from '@/features/trees/vocab'
+import { HEALTH, HEIGHT_BANDS, SITE_CONTEXTS, CONFLICTS, URGENCIES, ORIGINS } from '@/features/trees/vocab'
 import {
   FieldLabel,
   OptionList,
@@ -65,6 +65,8 @@ export default function NewTreeScreen() {
   const [circumference, setCircumference] = useState('')
   const [heightBand, setHeightBand] = useState<E['tree_height_band'] | null>(null)
   const [siteContext, setSiteContext] = useState<E['tree_site_context'] | null>(null)
+  // Default 'existing': el MVP se enfoca en mapear el arbolado que ya existe.
+  const [origin, setOrigin] = useState<E['tree_origin']>('existing')
   const [conflicts, setConflicts] = useState<E['tree_conflict'][]>([])
   const [health, setHealth] = useState<E['tree_health'] | null>(null)
   const [urgency, setUrgency] = useState<E['tree_urgency']>('none')
@@ -158,6 +160,7 @@ export default function NewTreeScreen() {
         siteContext,
         conflicts,
         urgency,
+        origin,
         speciesId,
         speciesName,
       })
@@ -430,6 +433,16 @@ export default function NewTreeScreen() {
                 ¿Dónde está plantado?
               </FieldLabel>
               <OptionList options={SITE_CONTEXTS} value={siteContext} onChange={setSiteContext} compact />
+
+              <View className="h-6" />
+
+              {/* Origen (13.1.1): inmutable, y sólo se puede saber en el momento
+                  del registro. Un árbol plantado conserva fecha de nacimiento
+                  exacta; si no se pregunta ahora, ese dato se pierde para siempre. */}
+              <FieldLabel hint="Sirve para saber si su edad es exacta o estimada.">
+                ¿Ya estaba o lo plantaron?
+              </FieldLabel>
+              <OptionList options={ORIGINS} value={origin} onChange={setOrigin} compact />
 
               <View className="h-6" />
 

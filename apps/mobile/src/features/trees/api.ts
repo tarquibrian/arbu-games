@@ -8,6 +8,7 @@ type TreeHeightBand = Database['public']['Enums']['tree_height_band']
 type TreeSiteContext = Database['public']['Enums']['tree_site_context']
 type TreeConflict = Database['public']['Enums']['tree_conflict']
 type TreeUrgency = Database['public']['Enums']['tree_urgency']
+type TreeOrigin = Database['public']['Enums']['tree_origin']
 
 // Las pantallas trabajan directo con los enums del schema y traducen sólo al
 // pintar (src/features/trees/vocab.ts). Antes había un mapa ES→EN acá; con
@@ -51,6 +52,8 @@ export type NewTreeInput = {
   siteContext?: TreeSiteContext | null
   conflicts?: TreeConflict[]
   urgency?: TreeUrgency
+  /** Cómo entró el árbol a los datos (13.1.1). Inmutable: sólo se sabe al registrar. */
+  origin?: TreeOrigin
   speciesId?: string | null
   speciesName?: string | null
   notes?: string | null
@@ -78,6 +81,7 @@ export async function createTree(input: NewTreeInput): Promise<TreeRow> {
     site_context: input.siteContext ?? null,
     conflicts: input.conflicts ?? [],
     urgency: input.urgency ?? 'none',
+    origin: input.origin ?? 'existing',
     species_id: input.speciesId ?? null,
     species_name: input.speciesName ?? null,
     notes: input.notes ?? null,

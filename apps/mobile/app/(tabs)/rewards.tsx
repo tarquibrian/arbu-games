@@ -4,7 +4,9 @@ import { router } from 'expo-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ScreenBackground } from '@/shared/components/ui/ScreenBackground'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { T } from '@/shared/theme'
+import { LinearGradient } from 'expo-linear-gradient'
+import { T, CTA_GRADIENT } from '@/shared/theme'
+import { appConfigQuery, DEFAULT_CONFIG } from '@/features/config/api'
 import { Card, HeroCard, PrimaryButton, Chip, SectionTitle, IconWell } from '@/shared/components/ui/Kit'
 import { WalletIcon, CheckIcon } from '@/shared/components/ui/Icons'
 import { CouponCodeCard } from '@/features/coupons/CouponCodeCard'
@@ -25,6 +27,7 @@ export default function RewardsScreen() {
   const [success, setSuccess] = useState<SuccessInfo | null>(null)
 
   const balanceQ = useQuery({ queryKey: ['balance'], queryFn: getMyBalance })
+  const cfg = useQuery(appConfigQuery).data ?? DEFAULT_CONFIG
   const couponsQ = useQuery({ queryKey: ['coupons'], queryFn: listCoupons })
   const balance = balanceQ.data ?? 0
 
@@ -113,7 +116,11 @@ export default function RewardsScreen() {
                 </Text>
               )}
           </View>
-          <Text className="text-muted text-xs">≈ {(balance / 10).toFixed(0)} Bs en beneficios</Text>
+          {/* La equivalencia sale de la perilla value_rate, no de un /10 fijo:
+              si el equipo ajusta coins_per_bs, este número tiene que seguirla. */}
+          <Text className="text-muted text-xs">
+            ≈ {(balance / cfg.coinsPerBs).toFixed(0)} Bs en beneficios
+          </Text>
         </HeroCard>
 
         {/* Categories */}
@@ -195,8 +202,30 @@ export default function RewardsScreen() {
                   <View className="h-2" />
                 )}
 
+                {/* Progreso visible (13.3.1): ver cuánto falta motiva el ahorro.
+                    "Saldo insuficiente" a secas no dice si estás cerca o lejos. */}
+                {!soldOut && !affordable ? (
+                  <View className="mb-3">
+                    <View className="h-1.5 w-full bg-black/30 rounded-full overflow-hidden">
+                      <LinearGradient
+                        colors={[...CTA_GRADIENT]}
+                        start={{ x: 0, y: 0.5 }}
+                        end={{ x: 1, y: 0.5 }}
+                        style={{
+                          height: '100%',
+                          borderRadius: 100,
+                          width: `${Math.max((balance / coupon.price_coins) * 100, 2)}%`,
+                        }}
+                      />
+                    </View>
+                    <Text className="text-faint text-[11px] mt-1.5">
+                      Te faltan {coupon.price_coins - balance} AC
+                    </Text>
+                  </View>
+                ) : null}
+
                 <PrimaryButton
-                  title={soldOut ? 'Agotado' : !affordable ? 'Saldo insuficiente' : 'Canjear Beneficio'}
+                  title={soldOut ? 'Agotado' : !affordable ? `Te faltan ${coupon.price_coins - balance} AC` : 'Canjear Beneficio'}
                   disabled={busy || soldOut || !affordable}
                   loading={busy}
                   onPress={() => handleRedeem(coupon)}
