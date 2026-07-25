@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react'
 import {
   View, Text, Pressable, FlatList,
-  StyleSheet, Dimensions, Animated, Easing,
+  StyleSheet, useWindowDimensions, Animated, Easing,
 } from 'react-native'
 import { router } from 'expo-router'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -11,7 +11,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { SceneOne, SceneTwo, SceneThree } from '@/shared/components/ui/TreeScenes'
 import { ScreenBackground } from '@/shared/components/ui/ScreenBackground'
 import { useAuthStore } from '@/features/auth/store/authStore'
-const { width: W } = Dimensions.get('window')
 
 const C = {
   bright: '#2fe06a',
@@ -85,6 +84,12 @@ export default function OnboardingScreen() {
   const isProgrammatic = useRef(false)
   const listRef = useRef<FlatList>(null)
   const insets = useSafeAreaInsets()
+  // Reactivo a propósito: con `Dimensions.get()` a nivel de módulo el ancho se
+  // congelaba al cargar el bundle, así que al rotar el device (o redimensionar
+  // en web) los slides quedaban con un ancho que ya no era el de la ventana y
+  // se apilaban unos sobre otros. getItemLayout declara esa geometría como
+  // autoritativa, así que tiene que salir de la misma fuente que el estilo.
+  const { width: W } = useWindowDimensions()
   const last = index === SLIDES.length - 1
   const { setHasSeenOnboarding } = useAuthStore()
 
@@ -103,6 +108,13 @@ export default function OnboardingScreen() {
     isProgrammatic.current = true
     listRef.current?.scrollToIndex({ index: i, animated: true })
   }
+
+  // Al cambiar el ancho (rotar el device, redimensionar en web) el offset que
+  // tiene la lista corresponde al ancho viejo y el slide queda a mitad de
+  // camino. Se reposiciona sin animar.
+  useEffect(() => {
+    listRef.current?.scrollToOffset({ offset: W * indexRef.current, animated: false })
+  }, [W])
 
   const finish = async () => {
     await AsyncStorage.setItem('hasSeenOnboarding', 'true')
@@ -156,7 +168,7 @@ export default function OnboardingScreen() {
           goToIndex(Math.round(e.nativeEvent.contentOffset.x / W))
         }}
         renderItem={({ item }) => (
-          <View style={s.slide}>
+          <View style={[s.slide, { width: W }]}>
             <View style={s.sceneArea}>
               <item.Scene />
             </View>
@@ -199,7 +211,6 @@ const s = StyleSheet.create({
   skipRow: { alignItems: 'flex-end', paddingHorizontal: 26 },
   skipText: { color: C.muted, fontSize: 14.5, fontWeight: '600' },
   slide: {
-    width: W,
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
