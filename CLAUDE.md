@@ -55,7 +55,19 @@ npm run typecheck   # tsc --noEmit
 npm run test:db     # pgTAP sobre la lógica server-side (necesita supabase local corriendo)
 ```
 
-`npm run test:db` corre `apps/mobile/supabase/tests/*.test.sql` con pgTAP. Cubre la lógica donde un bug cuesta plata: el loop 1+3 y su pago (`validation_payout`), el anti doble-pago de misiones (`missions`), la regla "hoy o ayer" de las rachas (`streaks`) y los puntos/puestos del ranking (`leaderboard`). Cada archivo corre en una transacción que se revierte, así que no ensucia la base local. **Si tocás un trigger o un RPC de esos, corré esto antes de commitear.**
+`npm run test:db` corre `apps/mobile/supabase/tests/*.test.sql` con pgTAP. Cubre la lógica donde un bug cuesta plata, de los dos lados de la economía:
+
+| Archivo | Qué protege |
+|---|---|
+| `validation_payout` | El loop 1+3: no validar el propio árbol, no validar dos veces, geofence, pago sólo al completarse y a los cuatro, sin doble pago |
+| `coupon_redemption` | Gastar: saldo/cupo/cupón inactivo, y que un comercio no valide cupones de otro ni honre un código dos veces |
+| `missions` | Anti doble-pago del canje diario; progreso computado, no declarado |
+| `streaks` | La regla "termina hoy o **ayer**" (la que más fácil se rompe al refactorizar) |
+| `leaderboard` | Puntos según `points_rate`; `leaderboard_me` devuelve fila con `place` null si no participaste |
+
+Cada archivo corre en una transacción que se revierte, así que no ensucia la base local. **Si tocás un trigger o un RPC de esos, corré esto antes de commitear.**
+
+Al escribir tests nuevos: el sorteo de misiones es por hash de fecha, así que un test no puede asumir qué misiones salen hoy — acotá el catálogo (`update missions set active = false where code <> '...'`) dentro de la transacción en vez de depender del día.
 
 ## Mobile app — architecture (big picture)
 
