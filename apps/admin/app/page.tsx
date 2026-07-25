@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { getAdminUser } from '@/lib/auth'
@@ -53,6 +54,9 @@ export default async function AdminHome() {
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Arbu Games — Admin</h1>
           <p className="text-sm text-neutral-500">Alta de comercios, cuentas y cupones · piloto Cochabamba</p>
+          <Link href="/arboles" className="mt-2 inline-block text-sm font-semibold text-emerald-700 hover:underline">
+            Ver árboles y métricas del piloto →
+          </Link>
         </div>
         <LogoutButton email={admin.email ?? ''} />
       </header>

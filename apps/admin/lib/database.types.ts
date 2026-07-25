@@ -412,6 +412,8 @@ export type Database = {
           gps_accuracy: number | null
           health: Database["public"]["Enums"]["tree_health"]
           id: string
+          /** Columna COMPUTADA (0012), no almacenada. Sólo lectura. */
+          is_stalled: boolean
           latitude: number
           lifecycle_stage:
             | Database["public"]["Enums"]["tree_lifecycle_stage"]
@@ -554,7 +556,20 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      /** Métricas del piloto (migración 0012). Sólo service_role. */
+      pilot_metrics: {
+        Row: {
+          trees_total: number
+          validated: number
+          pending: number
+          stalled: number
+          unverifiable: number
+          pct_validated: number | null
+          avg_days_to_validate: number | null
+          avg_validations_pending: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       is_merchant_member: { Args: { p_merchant_id: string }; Returns: boolean }
