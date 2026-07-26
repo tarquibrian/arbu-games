@@ -107,9 +107,9 @@ export default async function TreesPage(props: { searchParams: Promise<{ estado?
             hint="nadie los encontró"
           />
         </div>
-        {metrics && metrics.pending > 0 ? (
+        {(metrics?.pending ?? 0) > 0 ? (
           <p className="mt-3 text-xs text-neutral-500">
-            Los {metrics.pending} pendientes llevan {metrics.avg_validations_pending ?? 0} verificaciones en promedio.
+            Los {metrics!.pending} pendientes llevan {metrics!.avg_validations_pending ?? 0} verificaciones en promedio.
             Un pendiente que no llega a 3 no le paga a nadie — de ahí el bono de rescate.
           </p>
         ) : null}

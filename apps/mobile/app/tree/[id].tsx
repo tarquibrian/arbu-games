@@ -17,7 +17,18 @@ import {
   conflictLabel,
 } from '@/features/trees/vocab'
 
-const FIELD_LABEL: Record<string, string> = {
+// Los nombres exactos que el servidor escribe en trees.disputed_fields (0007).
+// Tiparlos como unión y no como string suelto hace que un typo no compile en vez
+// de caer al default y mostrar un guion sin que nadie se entere.
+const DISPUTABLE = [
+  'species', 'health', 'circumference_cm', 'height_band', 'site_context', 'urgency',
+] as const
+type DisputableField = (typeof DISPUTABLE)[number]
+
+const isDisputable = (f: string): f is DisputableField =>
+  (DISPUTABLE as readonly string[]).includes(f)
+
+const FIELD_LABEL: Record<DisputableField, string> = {
   species: 'Especie',
   health: 'Estado fitosanitario',
   circumference_cm: 'Perímetro del tronco',
@@ -30,24 +41,27 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('es-BO', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-// Cómo respondió un participante ese campo — sirve para el árbol (registrante) y
-// para cada verificación, que comparten nombres de columna.
-function answerFor(field: string, src: TreeDetail | TreeValidationEntry): string {
+// Lo que registrante y verificadores tienen en común. Ambos tipos son
+// asignables a esto, así que no hace falta borrar el tipo con `as any`.
+type Answer = Pick<
+  TreeValidationEntry,
+  'health' | 'circumference_cm' | 'height_band' | 'site_context' | 'urgency'
+> & { species: { common_name: string } | null }
+
+function answerFor(field: DisputableField, src: Answer): string {
   switch (field) {
     case 'species':
-      return (src as any).species?.common_name ?? 'Sin opinión'
+      return src.species?.common_name ?? 'Sin opinión'
     case 'health':
-      return healthLabel((src as any).health) ?? '—'
+      return healthLabel(src.health) ?? '—'
     case 'circumference_cm':
-      return (src as any).circumference_cm != null ? `${(src as any).circumference_cm} cm` : 'Sin opinión'
+      return src.circumference_cm != null ? `${src.circumference_cm} cm` : 'Sin opinión'
     case 'height_band':
-      return heightLabel((src as any).height_band) ?? 'Sin opinión'
+      return heightLabel(src.height_band) ?? 'Sin opinión'
     case 'site_context':
-      return contextLabel((src as any).site_context) ?? 'Sin opinión'
+      return contextLabel(src.site_context) ?? 'Sin opinión'
     case 'urgency':
-      return urgencyLabel((src as any).urgency) ?? 'Sin opinión'
-    default:
-      return '—'
+      return urgencyLabel(src.urgency) ?? 'Sin opinión'
   }
 }
 
@@ -101,8 +115,12 @@ export default function TreeDetailScreen() {
     )
   }
 
-  const disputed = t.disputed_fields ?? []
-  const isDisputed = (f: string) => disputed.includes(f)
+  // disputed_fields llega como text[] del servidor. Se filtra a los que la
+  // pantalla sabe mostrar: si el servidor agrega un campo disputable nuevo y acá
+  // no se le da etiqueta, es preferible omitirlo a pintar el nombre crudo de la
+  // columna. El compilador obliga a pasar por acá.
+  const disputed = (t.disputed_fields ?? []).filter(isDisputable)
+  const isDisputed = (f: DisputableField) => disputed.includes(f)
   const validated = t.status === 'validated'
   const healthDot = HEALTH.find((h) => h.value === t.health)?.dot
   const speciesName = t.species?.common_name ?? t.species_name ?? 'Especie sin identificar'
@@ -270,7 +288,7 @@ export default function TreeDetailScreen() {
           {disputed.map((f) => (
             <View key={f} className="mt-4 bg-[#122e20] border border-yellow-500/20 rounded-2xl p-3.5">
               <Text className="text-yellow-400 text-[11px] font-bold mb-2">
-                {FIELD_LABEL[f] ?? f} — respuestas
+                {FIELD_LABEL[f]} — respuestas
               </Text>
               <View className="flex-row justify-between mb-1">
                 <Text className="text-gray-400 text-[11px]">
